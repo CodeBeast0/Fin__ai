@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+@theme {
+  --font-pixel: "Pixelify Sans", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+}
