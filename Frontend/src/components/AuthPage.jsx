@@ -34,7 +34,12 @@ const AuthPage = () => {
       className="bg-[#2A9134] h-screen text-white font-pixel"
     >
       <div className="flex justify-center items-center flex-col py-10">
-        <img src="coin.png" className="w-72 anim-item" alt="" />
+        <img
+          src="/coin.webp"
+          className="w-72 anim-item"
+          alt="Coin"
+          loading="lazy"
+        />
         <h1 className="text-6xl mb-10 mt-[-20px] anim-item">Fley</h1>
         <div className="flex justify-center items-center flex-col gap-5 w-full px-5 sm:w-1/2 mt-10 anim-item">
           <button
