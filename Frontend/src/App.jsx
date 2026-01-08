@@ -1,11 +1,14 @@
 import React from 'react'
-import AuthPage from './components/AuthPage'
+import Home from './pages/Home'
+import { Routes, Route } from "react-router-dom";
 
 const App = () => {
   return (
-    <div className="bg-[#2A9134] h-screen text-white">
-      <AuthPage />
-    </div>  
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </>  
   )
 }
 
