@@ -12,7 +12,7 @@ const Onboarding = () => {
   ]);
   const [error, setError] = useState("");
 
-  const API_URL = "http://localhost:5000/api/users";
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleExpenseChange = (index, field, value) => {
     const newExpenses = [...expenses];
@@ -98,7 +98,7 @@ const Onboarding = () => {
         goals: cleanGoals,
       };
 
-      const response = await fetch(`${API_URL}/onboarding`, {
+      const response = await fetch(`${API_URL}/api/users/onboarding`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -123,7 +123,7 @@ const Onboarding = () => {
         .filter((g) => g.name && g.targetAmount)
         .map((g) => ({ ...g, targetAmount: Number(g.targetAmount) }));
 
-      await fetch(`${API_URL}/onboarding`, {
+      await fetch(`${API_URL}/api/users/onboarding`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

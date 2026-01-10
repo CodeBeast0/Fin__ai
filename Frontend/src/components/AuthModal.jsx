@@ -9,7 +9,7 @@ const AuthModal = ({ isOpen, onClose }) => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    const API_URL = "http://localhost:5000/api/users"; // TODO: Should come from env or config
+    const API_URL = import.meta.env.VITE_API_URL;
 
     if (!isOpen) return null;
 
@@ -17,7 +17,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         e.preventDefault();
         setError('');
 
-        const endpoint = isLogin ? `${API_URL}/login` : `${API_URL}/register`;
+        const endpoint = isLogin ? `${API_URL}/api/users/login` : `${API_URL}/api/users/register`;
         const payload = isLogin ? { email, password } : { name, email, password };
 
         try {
