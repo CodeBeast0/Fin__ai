@@ -1,6 +1,6 @@
 import express from "express";
 import User from "../models/user.js";
-import { generateToken } from "../config/jwt.js";
+import { generateToken, verifyToken } from "../config/jwt.js";
 import bcrypt from "bcryptjs";
 
 export const registerUser = async (req, res) => {
@@ -20,9 +20,29 @@ export const registerUser = async (req, res) => {
       role,
     });
 
+    // Generate token for immediate login
+    const token = generateToken({ id: user._id, role: user.role });
+
+    // Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
     res
       .status(201)
-      .json({ message: "User registered successfully", userId: user._id });
+      .json({
+        message: "User registered successfully",
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          onboardingCompleted: user.onboardingCompleted
+        }
+      });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -56,9 +76,8 @@ export const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        salary: user.salary,
-        allowance: user.allowance,
-        monthlySaving: user.monthlySaving,
+        onboardingCompleted: user.onboardingCompleted,
+        financeProfile: user.financeProfile
       },
     });
   } catch (err) {
@@ -74,4 +93,27 @@ export const logoutUser = async (req, res) => {
     sameSite: "lax",
   });
   res.json({ message: "Logged out successfully" });
+};
+
+export const updateOnboarding = async (req, res) => {
+  const { allowance, expenses, goals } = req.body;
+
+  try {
+    const user = req.user;
+
+    user.financeProfile = {
+      allowance: allowance || 0,
+      expenses: expenses || [],
+      goals: goals || [],
+      aiPlan: {}
+    };
+    user.onboardingCompleted = true;
+
+    await user.save();
+
+    res.json({ message: "Onboarding completed", user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
 };
