@@ -27,13 +27,11 @@ export const registerUser = async (req, res) => {
 
 
     // Set cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      partitioned: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    // Set cookie manually to ensure Partitioned attribute is included
+    res.setHeader(
+      "Set-Cookie",
+      `token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${7 * 24 * 60 * 60}`
+    );
 
     res.status(201).json({
       message: "User registered successfully",
@@ -65,13 +63,11 @@ export const login = async (req, res) => {
     const token = generateToken({ id: user._id, role: user.role });
 
     // Set cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      partitioned: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    // Set cookie manually
+    res.setHeader(
+      "Set-Cookie",
+      `token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${7 * 24 * 60 * 60}`
+    );
 
     res.json({
       message: "Login successful",
