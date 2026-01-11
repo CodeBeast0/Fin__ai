@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -11,8 +12,6 @@ const Onboarding = () => {
     { name: "", targetAmount: "", deadline: "" },
   ]);
   const [error, setError] = useState("");
-
-  const API_URL = import.meta.env.VITE_API_URL;
 
   const handleExpenseChange = (index, field, value) => {
     const newExpenses = [...expenses];
@@ -69,8 +68,8 @@ const Onboarding = () => {
           }
         }
       }
-      
-      
+
+
     }
     return true;
   };
@@ -98,13 +97,7 @@ const Onboarding = () => {
         goals: cleanGoals,
       };
 
-      const response = await fetch(`${API_URL}/api/users/onboarding`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      await api.put("/users/onboarding", payload);
     } catch (error) {
       console.error(error);
       alert("Failed to save profile");
@@ -123,18 +116,13 @@ const Onboarding = () => {
         .filter((g) => g.name && g.targetAmount)
         .map((g) => ({ ...g, targetAmount: Number(g.targetAmount) }));
 
-      await fetch(`${API_URL}/api/users/onboarding`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          allowance: Number(allowance),
-          expenses: cleanExpenses,
-          goals: cleanGoals,
-        }),
-        credentials: "include", 
+      await api.put("/users/onboarding", {
+        allowance: Number(allowance),
+        expenses: cleanExpenses,
+        goals: cleanGoals,
       });
 
-      navigate("/dashboard"); 
+      navigate("/dashboard");
     } catch (e) {
       console.error(e);
     } finally {

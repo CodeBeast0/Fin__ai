@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from "../api/axios";
 
 const AuthModal = ({ isOpen, onClose }) => {
     const [isLogin, setIsLogin] = useState(true);
@@ -9,32 +10,18 @@ const AuthModal = ({ isOpen, onClose }) => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    const API_URL = import.meta.env.VITE_API_URL;
-
     if (!isOpen) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        const endpoint = isLogin ? `${API_URL}/api/users/login` : `${API_URL}/api/users/register`;
+        const endpoint = isLogin ? "/users/login" : "/users/register";
         const payload = isLogin ? { email, password } : { name, email, password };
 
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
-                credentials: 'include',
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Something went wrong');
-            }
+            const response = await api.post(endpoint, payload);
+            const data = response.data;
 
             // Success!
             // Check onboarding status
@@ -45,7 +32,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                 onClose();
             }
         } catch (err) {
-            setError(err.message);
+            setError(err.response?.data?.message || err.message || 'Something went wrong');
         }
     };
 
