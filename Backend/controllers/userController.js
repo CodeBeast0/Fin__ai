@@ -21,15 +21,17 @@ export const registerUser = async (req, res) => {
       role,
     });
 
-    
+
     const token = generateToken({ id: user._id, role: user.role });
 
-    
-    
+
+
+    // Set cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      partitioned: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -62,10 +64,12 @@ export const login = async (req, res) => {
 
     const token = generateToken({ id: user._id, role: user.role });
 
+    // Set cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
+      partitioned: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -91,6 +95,7 @@ export const logoutUser = async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: "none",
+    partitioned: true,
   });
   res.json({ message: "Logged out successfully" });
 };
