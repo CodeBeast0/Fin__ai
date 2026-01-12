@@ -106,7 +106,7 @@ export const updateOnboarding = async (req, res) => {
       allowance: allowance || 0,
       expenses: expenses || [],
       goals: goals || [],
-      aiPlan: {},
+      aiPlan: null, // Clear cached plan to force regeneration
     };
     user.onboardingCompleted = true;
 
@@ -183,6 +183,12 @@ export const generateFinancialPlan = async (req, res) => {
       });
     }
 
+
+    
+    user.financeProfile.aiPlan = aiPlan;
+    await user.save();
+
+
     res.json({
       success: true,
       data: aiPlan
@@ -193,5 +199,24 @@ export const generateFinancialPlan = async (req, res) => {
     res.status(500).json({
       message: "Failed to generate financial plan"
     });
+  }
+};
+
+export const getUserProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      onboardingCompleted: user.onboardingCompleted,
+      financeProfile: user.financeProfile
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 };

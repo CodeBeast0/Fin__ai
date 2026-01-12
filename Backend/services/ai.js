@@ -87,27 +87,43 @@ Return ONLY valid JSON in this exact format:
     },
   };
 
-  try {
-    const response = await axios.post(
-      `${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`,
-      requestBody,
-      { headers: { "Content-Type": "application/json" } }
-    );
+  const MAX_RETRIES = 3;
+  let attempt = 0;
+  let response;
 
-
-    let rawContent = response.data.candidates[0].content.parts[0].text;
-
-    // Clean markdown if present
-    rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
-
+  while (attempt < MAX_RETRIES) {
     try {
-      return JSON.parse(rawContent);
-    } catch (parseError) {
-      console.error("Gemini JSON parse error. Raw response:", rawContent);
-      throw new Error("AI returned invalid JSON.");
+      response = await axios.post(
+        `${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`,
+        requestBody,
+        { headers: { "Content-Type": "application/json" } }
+      );
+      break; // Success, exit loop
+    } catch (err) {
+      if (err.response && (err.response.status === 503 || err.response.status === 429)) {
+        attempt++;
+        console.warn(`Gemini API Error ${err.response.status}. Retrying (${attempt}/${MAX_RETRIES})...`);
+        if (attempt >= MAX_RETRIES) throw err;
+
+        const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s...
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      } else {
+        throw err; // Other errors (400, 401, etc.) fail immediately
+      }
     }
-  } catch (error) {
-    console.error("Gemini API Error:", error.response?.data || error.message);
-    throw new Error("Financial AI failed to generate plan.");
   }
+
+
+  let rawContent = response.data.candidates[0].content.parts[0].text;
+
+
+  rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+
+  try {
+    return JSON.parse(rawContent);
+  } catch (parseError) {
+    console.error("Gemini JSON parse error. Raw response:", rawContent);
+    throw new Error("AI returned invalid JSON.");
+  }
+
 };

@@ -46,10 +46,17 @@ const userSchema = new mongoose.Schema({
     goals: [goalSchema],
 
     aiPlan: {
-      savings: Number,
-      needs: Number,
-      wants: Number,
-      notes: String, // AI explanation
+      monthlySplit: {
+        entertainment: Number,
+        savings: Number,
+      },
+      goalPlan: {
+        goal: String,
+        monthlySaving: Number,
+        monthsNeeded: Number,
+      },
+      savingsPurpose: String,
+      disciplineRules: [String],
     },
   },
 
