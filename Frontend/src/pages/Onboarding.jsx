@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 
@@ -7,11 +7,50 @@ const Onboarding = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [allowance, setAllowance] = useState("");
+  const [allowanceDate, setAllowanceDate] = useState("1");
   const [expenses, setExpenses] = useState([{ title: "", amount: "" }]);
   const [goals, setGoals] = useState([
-    { name: "", targetAmount: "", deadline: "" },
+    { name: "", targetAmount: "", estimatedDate: "" },
   ]);
   const [error, setError] = useState("");
+
+  // Fetch existing user data if editing
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await api.get("/users/me");
+        const user = response.data;
+
+        if (user.financeProfile && user.onboardingCompleted) {
+          // Pre-populate with existing data
+          if (user.financeProfile.allowance) {
+            setAllowance(user.financeProfile.allowance.toString());
+          }
+          if (user.financeProfile.allowanceDate) {
+            setAllowanceDate(user.financeProfile.allowanceDate.toString());
+          }
+          if (user.financeProfile.expenses && user.financeProfile.expenses.length > 0) {
+            setExpenses(user.financeProfile.expenses.map(e => ({
+              title: e.title,
+              amount: e.amount.toString()
+            })));
+          }
+          if (user.financeProfile.goals && user.financeProfile.goals.length > 0) {
+            setGoals(user.financeProfile.goals.map(g => ({
+              name: g.name,
+              targetAmount: g.targetAmount.toString(),
+              estimatedDate: g.estimatedDate ? new Date(g.estimatedDate).toISOString().split('T')[0] : ""
+            })));
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        // If error, just continue with empty form
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleExpenseChange = (index, field, value) => {
     const newExpenses = [...expenses];
@@ -29,7 +68,7 @@ const Onboarding = () => {
     setGoals(newGoals);
   };
   const addGoal = () =>
-    setGoals([...goals, { name: "", targetAmount: "", deadline: "" }]);
+    setGoals([...goals, { name: "", targetAmount: "", estimatedDate: "" }]);
   const removeGoal = (index) => setGoals(goals.filter((_, i) => i !== index));
 
   const validateStep = () => {
@@ -37,6 +76,11 @@ const Onboarding = () => {
     if (step === 1) {
       if (!allowance || Number(allowance) <= 0) {
         setError("Monthly allowance must be a positive number");
+        return false;
+      }
+      const day = Number(allowanceDate);
+      if (!allowanceDate || day < 1 || day > 31) {
+        setError("Allowance date must be between 1 and 31");
         return false;
       }
     }
@@ -48,28 +92,14 @@ const Onboarding = () => {
       }
     }
     if (step === 3) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
       for (let g of goals) {
-        if (g.name || g.targetAmount || g.deadline) {
+        if (g.name || g.targetAmount || g.estimatedDate) {
           if (Number(g.targetAmount) <= 0) {
             setError("Goal target amount must be positive");
             return false;
           }
-          if (!g.deadline) {
-            setError("Please select a deadline date");
-            return false;
-          }
-          const d = new Date(g.deadline);
-          if (d < today) {
-            setError("Deadline must be in the future");
-            return false;
-          }
         }
       }
-
-
     }
     return true;
   };
@@ -93,6 +123,7 @@ const Onboarding = () => {
 
       const payload = {
         allowance: Number(allowance),
+        allowanceDate: Number(allowanceDate),
         expenses: cleanExpenses,
         goals: cleanGoals,
       };
@@ -118,6 +149,7 @@ const Onboarding = () => {
 
       await api.put("/users/onboarding", {
         allowance: Number(allowance),
+        allowanceDate: Number(allowanceDate),
         expenses: cleanExpenses,
         goals: cleanGoals,
       });
@@ -164,18 +196,36 @@ const Onboarding = () => {
 
         <div className="bg-[#111] border border-gray-800 p-6 rounded-2xl">
           {step === 1 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
-                Monthly Allowance ($)
-              </label>
-              <input
-                type="number"
-                value={allowance}
-                onChange={(e) => setAllowance(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-gray-800 rounded-xl px-4 py-3 text-2xl font-bold text-white focus:outline-none focus:border-blue-500"
-                placeholder="0.00"
-                autoFocus
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Monthly Allowance ($)
+                </label>
+                <input
+                  type="number"
+                  value={allowance}
+                  onChange={(e) => setAllowance(e.target.value)}
+                  className="w-full bg-[#1a1a1a] border border-gray-800 rounded-xl px-4 py-3 text-2xl font-bold text-white focus:outline-none focus:border-blue-500"
+                  placeholder="0.00"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Day of Month You Receive Allowance
+                </label>
+                <select
+                  value={allowanceDate}
+                  onChange={(e) => setAllowanceDate(e.target.value)}
+                  className="w-full bg-[#1a1a1a] border border-gray-800 rounded-xl px-4 py-3 text-lg text-white focus:outline-none focus:border-blue-500"
+                >
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                    <option key={day} value={day}>
+                      {day}{day === 1 ? 'st' : day === 2 ? 'nd' : day === 3 ? 'rd' : 'th'} of the month
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
 
@@ -246,10 +296,11 @@ const Onboarding = () => {
                       />
                       <input
                         type="date"
-                        value={goal.deadline}
+                        value={goal.estimatedDate}
                         onChange={(e) =>
-                          handleGoalChange(i, "deadline", e.target.value)
+                          handleGoalChange(i, "estimatedDate", e.target.value)
                         }
+                        placeholder="dd/mm/yyyy"
                         className="flex-1 w-1/2 bg-[#1a1a1a] border border-gray-800 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500"
                       />
                     </div>

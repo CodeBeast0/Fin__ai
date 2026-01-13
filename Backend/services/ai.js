@@ -72,12 +72,15 @@ Return ONLY valid JSON in this exact format:
       ? `"goalPlan": {
           "goal": string,
           "monthlySaving": number,
-          "monthsNeeded": number
+          "monthsNeeded": number,
+          "estimatedDate": string (ISO 8601 format: YYYY-MM-DD)
         },`
       : `"savingsPurpose": string,`
     }
   "disciplineRules": string[]
 }
+
+IMPORTANT: Calculate estimatedDate by adding monthsNeeded to today's date.
 `;
 
   const requestBody = {

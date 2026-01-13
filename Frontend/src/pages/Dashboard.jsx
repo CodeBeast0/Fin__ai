@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import {
   PieChart,
@@ -7,16 +8,36 @@ import {
   ResponsiveContainer,
   Legend,
   Tooltip,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
 } from "recharts";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [aiPlan, setAiPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/users/logout");
+      navigate("/");
+    } catch (err) {
+      console.error("Logout error:", err);
+      navigate("/");
+    }
+  };
+
+  const handleEditProfile = () => {
+    navigate("/onboarding");
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -43,25 +64,7 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  // Calculate goal progress based on time elapsed
-  const calculateGoalProgress = (goal) => {
-    if (!goal.deadline) return 0;
 
-    const today = new Date();
-    const deadline = new Date(goal.deadline);
-    const createdDate = user?.createdAt ? new Date(user.createdAt) : today;
-
-    // Calculate total duration and elapsed time in days
-    const totalDuration = deadline - createdDate;
-    const elapsed = today - createdDate;
-
-    // Prevent negative or invalid values
-    if (totalDuration <= 0) return 100;
-    if (elapsed <= 0) return 0;
-
-    const progress = (elapsed / totalDuration) * 100;
-    return Math.min(Math.max(progress, 0), 100);
-  };
 
   if (loading)
     return (
@@ -90,9 +93,9 @@ const Dashboard = () => {
 
   const chartData = aiPlan
     ? [
-        { name: "Entertainment", value: aiPlan.monthlySplit.entertainment },
-        { name: "Savings", value: aiPlan.monthlySplit.savings },
-      ]
+      { name: "Entertainment", value: aiPlan.monthlySplit.entertainment },
+      { name: "Savings", value: aiPlan.monthlySplit.savings },
+    ]
     : [];
 
   const COLORS = ["#3b82f6", "#10b981"];
@@ -110,13 +113,35 @@ const Dashboard = () => {
               Here's your financial breakdown
             </p>
           </div>
-          <div className="bg-[#111] border border-gray-800 px-6 py-3 rounded-2xl flex flex-col items-end">
-            <span className="text-xs text-gray-400 uppercase tracking-wider">
-              Monthly Allowance
-            </span>
-            <span className="text-2xl font-bold text-white">
-              ${user?.financeProfile?.allowance}
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="bg-[#111] border border-gray-800 px-6 py-3 rounded-2xl flex flex-col items-end">
+              <span className="text-xs text-gray-400 uppercase tracking-wider">
+                Monthly Allowance
+              </span>
+              <span className="text-2xl font-bold text-white">
+                ${user?.financeProfile?.allowance}
+              </span>
+            </div>
+            <button
+              onClick={handleEditProfile}
+              className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-2"
+              title="Edit Profile"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+              </svg>
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-500 text-white px-4 py-3 rounded-xl font-medium transition-colors flex items-center gap-2"
+              title="Logout"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+              </svg>
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           </div>
         </header>
 
@@ -201,6 +226,80 @@ const Dashboard = () => {
               </div>
             </div>
 
+            {/* Savings Progress Card - Separate Block */}
+            <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 md:p-8 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-green-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+
+              <div className="relative z-10">
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                  <span className="w-2 h-8 bg-green-500 rounded-full"></span>
+                  Savings Progress
+                </h2>
+
+                {/* Current Savings Display */}
+                <div className="mb-6 bg-[#1a1a1a] p-6 rounded-xl border border-gray-800">
+                  <p className="text-sm text-gray-400 mb-2">Total Saved So Far</p>
+                  <p className="text-4xl font-bold text-green-400">
+                    ${user?.financeProfile?.savingsHistory && user.financeProfile.savingsHistory.length > 0
+                      ? user.financeProfile.savingsHistory[user.financeProfile.savingsHistory.length - 1].amount
+                      : 0}
+                  </p>
+                  {user?.financeProfile?.allowanceDate && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      Next update: {user.financeProfile.allowanceDate}{user.financeProfile.allowanceDate === 1 ? 'st' : user.financeProfile.allowanceDate === 2 ? 'nd' : user.financeProfile.allowanceDate === 3 ? 'rd' : 'th'} of next month
+                    </p>
+                  )}
+                </div>
+
+                {/* Line Chart */}
+                {user?.financeProfile?.savingsHistory && user.financeProfile.savingsHistory.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={user.financeProfile.savingsHistory.map(entry => ({
+                        date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+                        amount: entry.amount
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                        <XAxis
+                          dataKey="date"
+                          stroke="#9ca3af"
+                          style={{ fontSize: '12px' }}
+                        />
+                        <YAxis
+                          stroke="#9ca3af"
+                          style={{ fontSize: '12px' }}
+                          tickFormatter={(value) => `$${value}`}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#1a1a1a",
+                            borderColor: "#333",
+                            borderRadius: "12px",
+                            color: "#fff",
+                          }}
+                          formatter={(value) => [`$${value}`, 'Saved']}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="amount"
+                          stroke="#10b981"
+                          strokeWidth={3}
+                          dot={{ fill: '#10b981', r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center bg-[#1a1a1a] rounded-xl border border-gray-800">
+                    <p className="text-gray-500 text-center">
+                      Savings tracking will begin on your next allowance date
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Discipline Rules */}
             <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 md:p-8">
               <h2 className="text-xl font-semibold mb-4 text-gray-200">
@@ -241,10 +340,10 @@ const Dashboard = () => {
                 ))}
                 {(!user?.financeProfile?.expenses ||
                   user.financeProfile.expenses.length === 0) && (
-                  <p className="text-gray-500 text-sm text-center py-4">
-                    No recurring expenses logged.
-                  </p>
-                )}
+                    <p className="text-gray-500 text-sm text-center py-4">
+                      No recurring expenses logged.
+                    </p>
+                  )}
               </div>
             </div>
             {/* Goals with Progress Bars */}
@@ -256,19 +355,9 @@ const Dashboard = () => {
               </h3>
 
               {user?.financeProfile?.goals &&
-              user.financeProfile.goals.length > 0 ? (
+                user.financeProfile.goals.length > 0 ? (
                 <div className="space-y-6">
                   {user.financeProfile.goals.map((goal, idx) => {
-                    const progress = calculateGoalProgress(goal);
-                    const deadline = goal.deadline
-                      ? new Date(goal.deadline)
-                      : null;
-                    const monthsRemaining = deadline
-                      ? Math.ceil(
-                          (deadline - new Date()) / (1000 * 60 * 60 * 24 * 30)
-                        )
-                      : 0;
-
                     return (
                       <div key={idx} className="space-y-3">
                         <div className="flex justify-between items-start">
@@ -285,20 +374,6 @@ const Dashboard = () => {
                             <p className="text-lg text-white font-medium">
                               ${goal.targetAmount}
                             </p>
-                          </div>
-                        </div>
-
-                        {/* Progress Bar */}
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs text-gray-500">
-                            <span>Time Progress</span>
-                            <span>{progress.toFixed(1)}%</span>
-                          </div>
-                          <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
-                            <div
-                              className="bg-gradient-to-r from-blue-500 to-purple-500 h-full rounded-full transition-all duration-500"
-                              style={{ width: `${progress}%` }}
-                            ></div>
                           </div>
                         </div>
 
@@ -324,20 +399,13 @@ const Dashboard = () => {
                               </div>
                             </>
                           )}
-                          {deadline && (
-                            <div className="bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 col-span-2">
+                          {goal.estimatedDate && (
+                            <div className={`bg-[#1a1a1a] p-3 rounded-lg border border-gray-800 ${aiPlan?.goalPlan && idx === 0 ? 'col-span-2' : 'col-span-2'}`}>
                               <p className="text-gray-500 text-xs mb-1">
-                                Deadline
+                                Estimated Date
                               </p>
-                              <p className="text-white font-medium">
-                                {deadline.toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}
-                                <span className="text-gray-500 ml-2">
-                                  ({monthsRemaining} months remaining)
-                                </span>
+                              <p className="text-green-400 font-medium">
+                                {new Date(goal.estimatedDate).toLocaleDateString("fr-FR")}
                               </p>
                             </div>
                           )}

@@ -8,7 +8,7 @@ const expenseSchema = new mongoose.Schema({
 const goalSchema = new mongoose.Schema({
   name: String,
   targetAmount: Number,
-  deadline: Date, // optional but powerful
+  estimatedDate: Date, // estimated completion date
 });
 
 const userSchema = new mongoose.Schema({
@@ -41,9 +41,19 @@ const userSchema = new mongoose.Schema({
       default: 0,
     },
 
+    allowanceDate: {
+      type: Number, // Day of month (1-31)
+      default: 1,
+    },
+
     expenses: [expenseSchema],
 
     goals: [goalSchema],
+
+    savingsHistory: [{
+      date: Date,
+      amount: Number,
+    }],
 
     aiPlan: {
       monthlySplit: {

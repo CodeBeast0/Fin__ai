@@ -97,15 +97,27 @@ export const logoutUser = async (req, res) => {
 };
 
 export const updateOnboarding = async (req, res) => {
-  const { allowance, expenses, goals } = req.body;
+  const { allowance, allowanceDate, expenses, goals } = req.body;
 
   try {
     const user = req.user;
 
+    // Preserve existing estimated dates if they exist
+    const updatedGoals = goals?.map((newGoal, index) => {
+      const existingGoal = user.financeProfile?.goals?.[index];
+      return {
+        ...newGoal,
+        // Keep existing estimated date if present and new goal doesn't have one
+        estimatedDate: newGoal.estimatedDate || existingGoal?.estimatedDate || null
+      };
+    }) || [];
+
     user.financeProfile = {
       allowance: allowance || 0,
+      allowanceDate: allowanceDate || 1,
       expenses: expenses || [],
-      goals: goals || [],
+      goals: updatedGoals,
+      savingsHistory: user.financeProfile?.savingsHistory || [],
       aiPlan: null, // Clear cached plan to force regeneration
     };
     user.onboardingCompleted = true;
@@ -183,8 +195,18 @@ export const generateFinancialPlan = async (req, res) => {
       });
     }
 
+    // Calculate and save estimated date to the first goal if AI provided it
+    if (hasGoals && aiPlan.goalPlan?.monthsNeeded) {
+      const today = new Date();
+      const estimatedDate = new Date(today);
+      estimatedDate.setMonth(estimatedDate.getMonth() + aiPlan.goalPlan.monthsNeeded);
 
-    
+      // Update the first goal (highest priority) with the estimated date
+      if (user.financeProfile.goals[0]) {
+        user.financeProfile.goals[0].estimatedDate = estimatedDate;
+      }
+    }
+
     user.financeProfile.aiPlan = aiPlan;
     await user.save();
 
@@ -208,6 +230,53 @@ export const getUserProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // Check if we need to update savings based on allowance date
+    if (user.financeProfile?.allowanceDate && user.financeProfile?.aiPlan?.monthlySplit?.savings) {
+      const today = new Date();
+      const allowanceDay = user.financeProfile.allowanceDate;
+      const monthlySavings = user.financeProfile.aiPlan.monthlySplit.savings;
+
+      // Get last savings entry
+      const savingsHistory = user.financeProfile.savingsHistory || [];
+      const lastEntry = savingsHistory.length > 0 ? savingsHistory[savingsHistory.length - 1] : null;
+      const lastUpdate = lastEntry ? new Date(lastEntry.date) : null;
+
+      let shouldUpdate = false;
+
+      if (!lastUpdate) {
+        // First time - initialize with monthly savings amount
+        shouldUpdate = true;
+        user.financeProfile.savingsHistory = [{
+          date: today,
+          amount: monthlySavings
+        }];
+      } else {
+        // Check if we've passed the allowance date since last update
+        const daysSinceUpdate = Math.floor((today - lastUpdate) / (1000 * 60 * 60 * 24));
+        const currentDay = today.getDate();
+
+        // If it's been at least a month and we've passed the allowance day
+        if (daysSinceUpdate >= 28 && currentDay >= allowanceDay) {
+          const lastUpdateDay = lastUpdate.getDate();
+
+          // Only update if we haven't already updated this month
+          if (lastUpdateDay < allowanceDay || today.getMonth() !== lastUpdate.getMonth()) {
+            shouldUpdate = true;
+            const currentSavings = lastEntry.amount || 0;
+            user.financeProfile.savingsHistory.push({
+              date: today,
+              amount: currentSavings + monthlySavings
+            });
+          }
+        }
+      }
+
+      if (shouldUpdate) {
+        await user.save();
+      }
+    }
+
     res.json({
       id: user._id,
       name: user.name,
