@@ -23,12 +23,10 @@ const AuthModal = ({ isOpen, onClose }) => {
             const response = await api.post(endpoint, payload);
             const data = response.data;
 
-            // Success!
-            // Check onboarding status
             if (data.user && !data.user.onboardingCompleted) {
                 navigate('/onboarding');
             } else {
-                // Just close modal or maybe navigate to dashboard?
+                navigate('/dashboard');
                 onClose();
             }
         } catch (err) {
