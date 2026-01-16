@@ -129,9 +129,10 @@ const Onboarding = () => {
       };
 
       await api.put("/users/onboarding", payload);
+      console.log("Onboarding step saved.");
     } catch (error) {
-      console.error(error);
-      alert("Failed to save profile");
+      console.error("SUBMIT ERROR:", error);
+      alert("Error saving step: " + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
