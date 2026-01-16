@@ -163,7 +163,7 @@ const Onboarding = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black text-white flex items-start sm:items-center justify-center p-4 pt-10 sm:pt-4">
       <div className="max-w-2xl w-full">
         <div className="mb-8">
           <div className="flex gap-2 mb-4">
