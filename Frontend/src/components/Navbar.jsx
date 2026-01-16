@@ -12,7 +12,7 @@ const Navbar = () => {
   ) : (
     <nav className="bg-black/20 backdrop-blur-md border border-white/10 shadow-lg py-2 px-5 w-3/4 mx-auto rounded-full flex justify-between flex-row items-center">
       <div className="flex flex-row items-center gap-2">
-        <img src="logo-rm.webp" className="w-16" alt="" />
+        <img src="coin.webp" className="w-16" alt="" />
         <h1 className="text-white font-semibold text-base sm:text-2xl font-poppins">
           FIN AI
         </h1>
