@@ -157,6 +157,8 @@ const Onboarding = () => {
       navigate("/dashboard");
     } catch (e) {
       console.error(e);
+      setError(e.response?.data?.message || e.message || "Failed to complete onboarding. Please try again.");
+      alert("Error: " + (e.response?.data?.message || e.message));
     } finally {
       setLoading(false);
     }
