@@ -154,12 +154,15 @@ const Onboarding = () => {
         goals: cleanGoals,
       });
 
+      console.log("Onboarding API call successful, navigating to dashboard...");
       navigate("/dashboard");
     } catch (e) {
-      console.error(e);
-      setError(e.response?.data?.message || e.message || "Failed to complete onboarding. Please try again.");
-      alert("Error: " + (e.response?.data?.message || e.message));
+      console.error("ONBOARDING ERROR:", e);
+      const errorMsg = e.response?.data?.message || e.message || "Unknown error";
+      setError(`Failed to complete onboarding: ${errorMsg}`);
+      alert(`Debug Info: ${errorMsg}`);
     } finally {
+      console.log("Onboarding submission finished state.");
       setLoading(false);
     }
   };
