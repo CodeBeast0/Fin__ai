@@ -3,18 +3,23 @@ import User from "../models/user.js";
 
 export const protect = async (req, res, next) => {
     try {
-        const token = req.cookies.fley_auth_token || req.cookies.token;
-        console.log("Token received:", token ? "Yes" : "No");
+        const token = req.cookies.fley_auth_token;
 
         if (!token) {
+            console.log("[AUTH] No fley_auth_token found in cookies");
             return res.status(401).json({ message: "Not authorized, no token" });
         }
 
         const decoded = verifyToken(token);
-        console.log("Decoded Token ID:", decoded.id);
+        console.log(`[AUTH] Verifying Identity for User ID: ${decoded.id}`);
 
         req.user = await User.findById(decoded.id).select("-password");
-        console.log("User found in DB:", req.user ? "Yes" : "No");
+
+        if (req.user) {
+            console.log(`[AUTH] Authenticated as: ${req.user.name} (${req.user.email})`);
+        } else {
+            console.log(`[AUTH] User ID ${decoded.id} not found in database`);
+        }
 
         if (!req.user) {
             console.log("User not found for ID:", decoded.id);
