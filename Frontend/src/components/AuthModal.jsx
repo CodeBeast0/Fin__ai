@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from "../api/axios";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const AuthModal = ({ isOpen, onClose }) => {
     const [isLogin, setIsLogin] = useState(true);
@@ -11,6 +13,7 @@ const AuthModal = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
 
     React.useEffect(() => {
+        console.log("[FLEY-DEBUG] AuthModal Loaded - Version 2.0 (JWT/Direct Axios)");
         if (!isOpen) {
             setName('');
             setEmail('');
@@ -29,10 +32,12 @@ const AuthModal = ({ isOpen, onClose }) => {
         const payload = isLogin ? { email, password } : { name, email, password };
 
         try {
-            const response = await api.post(endpoint, payload);
+            const response = await axios.post(`${API_URL}${endpoint}`, payload, {
+                withCredentials: false
+            });
             const data = response.data;
 
-            console.log("[AUTH] Server Response:", data); // Check if data.token exists!
+            console.log("[FLEY-DEBUG] Server Response Body:", data);
 
             if (data.token) {
                 localStorage.setItem('fley_token', data.token);

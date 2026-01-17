@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const Onboarding = () => {
   const navigate = useNavigate();
@@ -25,8 +27,14 @@ const Onboarding = () => {
   // Fetch existing user data if editing
   useEffect(() => {
     const fetchUserData = async () => {
+      const token = localStorage.getItem("fley_token");
+      console.log("[FLEY-DEBUG] Fetching User Data with Token:", token ? "FOUND" : "NOT FOUND");
+
       try {
-        const response = await api.get("/users/me");
+        const response = await axios.get(`${API_URL}/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: false
+        });
         const user = response.data;
 
         if (user.financeProfile && user.onboardingCompleted) {
@@ -141,7 +149,11 @@ const Onboarding = () => {
         goals: cleanGoals,
       };
 
-      await api.put("/users/onboarding", payload);
+      const token = localStorage.getItem("fley_token");
+      await axios.put(`${API_URL}/users/onboarding`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: false
+      });
       console.log("Onboarding step saved.");
     } catch (error) {
       console.error("SUBMIT ERROR:", error);
@@ -161,11 +173,15 @@ const Onboarding = () => {
         .filter((g) => g.name && g.targetAmount)
         .map((g) => ({ ...g, targetAmount: Number(g.targetAmount) }));
 
-      await api.put("/users/onboarding", {
+      const token = localStorage.getItem("fley_token");
+      await axios.put(`${API_URL}/users/onboarding`, {
         allowance: Number(allowance),
         allowanceDate: Number(allowanceDate),
         expenses: cleanExpenses,
         goals: cleanGoals,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: false
       });
 
       console.log("Onboarding API call successful, navigating to dashboard...");

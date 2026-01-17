@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import axios from "axios";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 import {
   PieChart,
   Pie,
@@ -26,8 +28,12 @@ const Dashboard = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const handleLogout = async () => {
+    const token = localStorage.getItem("fley_token");
     try {
-      await api.post("/users/logout");
+      await axios.post(`${API_URL}/users/logout`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: false
+      });
       localStorage.removeItem("fley_token");
       localStorage.removeItem("onboarding_step");
       navigate("/");
@@ -44,14 +50,24 @@ const Dashboard = () => {
   };
 
   const fetchData = async () => {
+    const token = localStorage.getItem("fley_token");
+    console.log("[FLEY-DEBUG] Dashboard Fetching with Token:", token ? "FOUND" : "NOT FOUND");
+
     setLoading(true);
     setError(null);
     try {
-      const userRes = await api.get("/users/me");
+      const authHeader = { Authorization: `Bearer ${token}` };
+      const userRes = await axios.get(`${API_URL}/users/me`, {
+        headers: authHeader,
+        withCredentials: false
+      });
       setUser(userRes.data);
 
       if (!userRes.data.financeProfile?.aiPlan) {
-        const planRes = await api.get("/users/AiPlan");
+        const planRes = await axios.get(`${API_URL}/users/AiPlan`, {
+          headers: authHeader,
+          withCredentials: false
+        });
         setAiPlan(planRes.data.data);
       } else {
         setAiPlan(userRes.data.financeProfile.aiPlan);
