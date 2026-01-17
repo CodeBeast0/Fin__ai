@@ -10,6 +10,15 @@ const AuthModal = ({ isOpen, onClose }) => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
+    React.useEffect(() => {
+        if (!isOpen) {
+            setName('');
+            setEmail('');
+            setPassword('');
+            setError('');
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const handleSubmit = async (e) => {

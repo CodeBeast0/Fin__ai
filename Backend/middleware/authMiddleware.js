@@ -3,7 +3,7 @@ import User from "../models/user.js";
 
 export const protect = async (req, res, next) => {
     try {
-        const token = req.cookies.token;
+        const token = req.cookies.fley_auth_token || req.cookies.token;
         console.log("Token received:", token ? "Yes" : "No");
 
         if (!token) {

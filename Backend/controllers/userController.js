@@ -26,11 +26,10 @@ export const registerUser = async (req, res) => {
 
 
 
-    // Set cookie
-    // Set cookie manually to ensure Partitioned attribute is included
+    
     res.setHeader(
       "Set-Cookie",
-      `token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${7 * 24 * 60 * 60}`
+      `fley_auth_token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${7 * 24 * 60 * 60}`
     );
 
     res.status(201).json({
@@ -66,7 +65,7 @@ export const login = async (req, res) => {
     // Set cookie manually
     res.setHeader(
       "Set-Cookie",
-      `token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${7 * 24 * 60 * 60}`
+      `fley_auth_token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${7 * 24 * 60 * 60}`
     );
 
     res.json({
@@ -87,10 +86,23 @@ export const login = async (req, res) => {
 };
 
 export const logoutUser = async (req, res) => {
+  // Clear both the new and old cookies just in case
+  res.clearCookie("fley_auth_token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+  });
   res.clearCookie("token", {
     httpOnly: true,
     secure: true,
     sameSite: "none",
+  });
+  // Also try to clear partitioned one if it exists
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    partitioned: true,
   });
   res.json({ message: "Logged out successfully" });
 };
