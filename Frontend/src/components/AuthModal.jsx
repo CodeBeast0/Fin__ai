@@ -43,8 +43,10 @@ const AuthModal = ({ isOpen, onClose }) => {
             if (data.token) {
                 window.localStorage.setItem('fley_token', data.token);
                 console.log("[FLEY-DEBUG] Token saved to localStorage:", window.localStorage.getItem('fley_token') ? "SUCCESS" : "FAILED");
+                alert("DEBUG: Token received and saved to localStorage (v2.1)");
             } else {
                 console.error("[FLEY-DEBUG] Fatal: Server did not return a token in the body!");
+                alert("DEBUG: FAILED - No token in server response");
             }
 
             if (data.user && !data.user.onboardingCompleted) {
@@ -70,10 +72,10 @@ const AuthModal = ({ isOpen, onClose }) => {
                 </button>
 
                 <h2 className="text-3xl font-bold text-white mb-2 text-center">
-                    {isLogin ? 'Welcome Back' : 'Create Account'}
+                    {isLogin ? 'Welcome Back v2.1' : 'Create Account v2.1'}
                 </h2>
                 <p className="text-gray-400 text-center mb-8">
-                    {isLogin ? 'Enter your details to sign in' : 'Sign up to start tracking your finances'}
+                    {isLogin ? 'Enter your details to sign in (Direct JWT)' : 'Sign up to start tracking your finances (Direct JWT)'}
                 </p>
 
                 {error && (
