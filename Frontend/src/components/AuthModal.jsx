@@ -28,6 +28,7 @@ const AuthModal = ({ isOpen, onClose }) => {
         e.preventDefault();
         setError('');
 
+        localStorage.removeItem("fley_token");
         const endpoint = isLogin ? "/users/login" : "/users/register";
         const payload = isLogin ? { email, password } : { name, email, password };
 
@@ -40,16 +41,18 @@ const AuthModal = ({ isOpen, onClose }) => {
             console.log("[FLEY-DEBUG] Server Response Body:", data);
 
             if (data.token) {
-                localStorage.setItem('fley_token', data.token);
+                window.localStorage.setItem('fley_token', data.token);
+                console.log("[FLEY-DEBUG] Token saved to localStorage:", window.localStorage.getItem('fley_token') ? "SUCCESS" : "FAILED");
             } else {
-                console.error("[AUTH] Fatal: Server did not return a token in the body!");
+                console.error("[FLEY-DEBUG] Fatal: Server did not return a token in the body!");
             }
 
             if (data.user && !data.user.onboardingCompleted) {
+                onClose();
                 navigate('/onboarding');
             } else {
-                navigate('/dashboard');
                 onClose();
+                navigate('/dashboard');
             }
         } catch (err) {
             setError(err.response?.data?.message || err.message || 'Something went wrong');
