@@ -56,6 +56,7 @@ const Onboarding = () => {
         // Handle 401/403 - redirect to home
         if (err.response?.status === 401 || err.response?.status === 403) {
           localStorage.removeItem("onboarding_step");
+          localStorage.removeItem("fley_token");
           navigate("/");
         }
       }

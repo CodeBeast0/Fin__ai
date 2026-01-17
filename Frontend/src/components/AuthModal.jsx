@@ -32,6 +32,10 @@ const AuthModal = ({ isOpen, onClose }) => {
             const response = await api.post(endpoint, payload);
             const data = response.data;
 
+            if (data.token) {
+                localStorage.setItem('fley_token', data.token);
+            }
+
             if (data.user && !data.user.onboardingCompleted) {
                 navigate('/onboarding');
             } else {

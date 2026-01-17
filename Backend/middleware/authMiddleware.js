@@ -3,10 +3,14 @@ import User from "../models/user.js";
 
 export const protect = async (req, res, next) => {
     try {
-        const token = req.cookies.fley_auth_token;
+        let token;
+
+        if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+            token = req.headers.authorization.split(" ")[1];
+        }
 
         if (!token) {
-            console.log("[AUTH] No fley_auth_token found in cookies");
+            console.log("[AUTH] No token found in Authorization header");
             return res.status(401).json({ message: "Not authorized, no token" });
         }
 

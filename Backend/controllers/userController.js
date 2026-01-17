@@ -26,21 +26,9 @@ export const registerUser = async (req, res) => {
 
 
 
-    // Clear ALL legacy cookie variations
-    const cookieOptions = { httpOnly: true, secure: true, sameSite: "none", path: "/" };
-    res.clearCookie("token", cookieOptions);
-    res.clearCookie("token", { ...cookieOptions, partitioned: true });
-    res.clearCookie("fley_auth_token", cookieOptions);
-    res.clearCookie("fley_auth_token", { ...cookieOptions, partitioned: true });
-
-    // Set new standardized cookie
-    res.cookie("fley_auth_token", token, {
-      ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-    });
-
     res.status(201).json({
       message: "User registered successfully",
+      token, // Return token directly
       user: {
         id: user._id,
         name: user.name,
@@ -68,21 +56,9 @@ export const login = async (req, res) => {
 
     const token = generateToken({ id: user._id, role: user.role });
 
-    // Clear ALL legacy variations to prevent shadowing
-    const cookieOptions = { httpOnly: true, secure: true, sameSite: "none", path: "/" };
-    res.clearCookie("token", cookieOptions);
-    res.clearCookie("token", { ...cookieOptions, partitioned: true });
-    res.clearCookie("fley_auth_token", cookieOptions);
-    res.clearCookie("fley_auth_token", { ...cookieOptions, partitioned: true });
-
-    // Set new cookie using standard res.cookie
-    res.cookie("fley_auth_token", token, {
-      ...cookieOptions,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
     res.json({
       message: "Login successful",
+      token, // Return token directly
       user: {
         id: user._id,
         name: user.name,
@@ -99,14 +75,6 @@ export const login = async (req, res) => {
 };
 
 export const logoutUser = async (req, res) => {
-  const cookieOptions = { httpOnly: true, secure: true, sameSite: "none", path: "/" };
-
-  // Clear everything imaginable
-  res.clearCookie("fley_auth_token", cookieOptions);
-  res.clearCookie("fley_auth_token", { ...cookieOptions, partitioned: true });
-  res.clearCookie("token", cookieOptions);
-  res.clearCookie("token", { ...cookieOptions, partitioned: true });
-
   res.json({ message: "Logged out successfully" });
 };
 

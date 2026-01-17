@@ -28,9 +28,11 @@ const Dashboard = () => {
   const handleLogout = async () => {
     try {
       await api.post("/users/logout");
+      localStorage.removeItem("fley_token");
       navigate("/");
     } catch (err) {
       console.error("Logout error:", err);
+      localStorage.removeItem("fley_token");
       navigate("/");
     }
   };
@@ -55,6 +57,7 @@ const Dashboard = () => {
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
       if (err.response?.status === 401 || err.response?.status === 403) {
+        localStorage.removeItem("fley_token");
         navigate("/");
       } else {
         setError(err.response?.data?.message || "Failed to load dashboard data");
