@@ -29,10 +29,12 @@ const Dashboard = () => {
     try {
       await api.post("/users/logout");
       localStorage.removeItem("fley_token");
+      localStorage.removeItem("onboarding_step");
       navigate("/");
     } catch (err) {
       console.error("Logout error:", err);
       localStorage.removeItem("fley_token");
+      localStorage.removeItem("onboarding_step");
       navigate("/");
     }
   };

@@ -32,8 +32,12 @@ const AuthModal = ({ isOpen, onClose }) => {
             const response = await api.post(endpoint, payload);
             const data = response.data;
 
+            console.log("[AUTH] Server Response:", data); // Check if data.token exists!
+
             if (data.token) {
                 localStorage.setItem('fley_token', data.token);
+            } else {
+                console.error("[AUTH] Fatal: Server did not return a token in the body!");
             }
 
             if (data.user && !data.user.onboardingCompleted) {
