@@ -28,7 +28,6 @@ const Onboarding = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("fley_token");
-      console.log("[FLEY-DEBUG] Fetching User Data with Token:", token ? "FOUND" : "NOT FOUND");
 
       try {
         const response = await axios.get(`${API_URL}/users/me`, {
@@ -224,9 +223,9 @@ const Onboarding = () => {
             {step === 3 && "Set your saving goals"}
           </h1>
           <p className="text-gray-400">
-            {step === 1 && "This helps us calculate your budget. (v2.2 - JWT Mode)"}
-            {step === 2 && "Rent, subscriptions, bills, etc. (v2.2 - JWT Mode)"}
-            {step === 3 && "What are you saving for? (v2.2 - JWT Mode)"}
+            {step === 1 && "This helps us calculate your budget."}
+            {step === 2 && "Rent, subscriptions, bills, etc."}
+            {step === 3 && "What are you saving for?"}
           </p>
         </div>
 

@@ -31,7 +31,7 @@ app.use(cors({
 app.use("/api/users", userRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Hello from Express backend!");
+  res.send("Fley API - Online");
 });
 
 
