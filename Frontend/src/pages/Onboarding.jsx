@@ -224,9 +224,9 @@ const Onboarding = () => {
             {step === 3 && "Set your saving goals"}
           </h1>
           <p className="text-gray-400">
-            {step === 1 && "This helps us calculate your budget. (v2.1)"}
-            {step === 2 && "Rent, subscriptions, bills, etc. (v2.1)"}
-            {step === 3 && "What are you saving for? (v2.1)"}
+            {step === 1 && "This helps us calculate your budget. (v2.2 - JWT Mode)"}
+            {step === 2 && "Rent, subscriptions, bills, etc. (v2.2 - JWT Mode)"}
+            {step === 3 && "What are you saving for? (v2.2 - JWT Mode)"}
           </p>
         </div>
 
