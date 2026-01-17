@@ -190,6 +190,17 @@ export const generateFinancialPlan = async (req, res) => {
     }
 
     user.financeProfile.aiPlan = aiPlan;
+
+    // Initialize savings history if empty
+    if (!user.financeProfile.savingsHistory || user.financeProfile.savingsHistory.length === 0) {
+      if (aiPlan.monthlySplit?.savings) {
+        user.financeProfile.savingsHistory = [{
+          date: new Date(),
+          amount: aiPlan.monthlySplit.savings
+        }];
+      }
+    }
+
     await user.save();
 
 

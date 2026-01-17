@@ -69,6 +69,14 @@ const Dashboard = () => {
           withCredentials: false
         });
         setAiPlan(planRes.data.data);
+
+        // RE-FETCH PROFILE: The backend updated estimated dates and savings during the AI plan generation.
+        // We need to fetch the updated profile to show these changes instantly!
+        const updatedUserRes = await axios.get(`${API_URL}/users/me`, {
+          headers: authHeader,
+          withCredentials: false
+        });
+        setUser(updatedUserRes.data);
       } else {
         setAiPlan(userRes.data.financeProfile.aiPlan);
       }
