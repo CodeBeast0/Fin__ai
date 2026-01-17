@@ -230,43 +230,43 @@ export const getUserProfile = async (req, res) => {
       const allowanceDay = user.financeProfile.allowanceDate;
       const monthlySavings = user.financeProfile.aiPlan.monthlySplit.savings;
 
-      // Get last savings entry
       const savingsHistory = user.financeProfile.savingsHistory || [];
       const lastEntry = savingsHistory.length > 0 ? savingsHistory[savingsHistory.length - 1] : null;
-      const lastUpdate = lastEntry ? new Date(lastEntry.date) : null;
 
-      let shouldUpdate = false;
-
-      if (!lastUpdate) {
-        // First time - initialize with monthly savings amount
-        shouldUpdate = true;
+      if (!lastEntry) {
+        // First time initialization
         user.financeProfile.savingsHistory = [{
           date: today,
           amount: monthlySavings
         }];
-      } else {
-        // Check if we've passed the allowance date since last update
-        const daysSinceUpdate = Math.floor((today - lastUpdate) / (1000 * 60 * 60 * 24));
-        const currentDay = today.getDate();
-
-        // If it's been at least a month and we've passed the allowance day
-        if (daysSinceUpdate >= 28 && currentDay >= allowanceDay) {
-          const lastUpdateDay = lastUpdate.getDate();
-
-          // Only update if we haven't already updated this month
-          if (lastUpdateDay < allowanceDay || today.getMonth() !== lastUpdate.getMonth()) {
-            shouldUpdate = true;
-            const currentSavings = lastEntry.amount || 0;
-            user.financeProfile.savingsHistory.push({
-              date: today,
-              amount: currentSavings + monthlySavings
-            });
-          }
-        }
-      }
-
-      if (shouldUpdate) {
         await user.save();
+      } else {
+        let checkDate = new Date(lastEntry.date);
+        let currentSavings = lastEntry.amount || 0;
+        let updated = false;
+
+        // Move to the expected next allowance date
+        checkDate.setMonth(checkDate.getMonth() + 1);
+        checkDate.setDate(allowanceDay);
+
+        // Iterate through all missed allowance dates until today
+        while (checkDate <= today) {
+          currentSavings += monthlySavings;
+          user.financeProfile.savingsHistory.push({
+            date: new Date(checkDate),
+            amount: currentSavings
+          });
+          updated = true;
+
+          // Increment by one month for the next iteration
+          checkDate.setMonth(checkDate.getMonth() + 1);
+          // Ensure we stick to the allowance day (in case of month rollover issues)
+          checkDate.setDate(allowanceDay);
+        }
+
+        if (updated) {
+          await user.save();
+        }
       }
     }
 
