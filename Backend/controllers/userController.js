@@ -30,7 +30,7 @@ export const registerUser = async (req, res) => {
     // Set cookie manually to ensure Partitioned attribute is included
     res.setHeader(
       "Set-Cookie",
-      `token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${7 * 24 * 60 * 60}`
+      `token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${7 * 24 * 60 * 60}`
     );
 
     res.status(201).json({
@@ -66,7 +66,7 @@ export const login = async (req, res) => {
     // Set cookie manually
     res.setHeader(
       "Set-Cookie",
-      `token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${7 * 24 * 60 * 60}`
+      `token=${token}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${7 * 24 * 60 * 60}`
     );
 
     res.json({
@@ -91,7 +91,6 @@ export const logoutUser = async (req, res) => {
     httpOnly: true,
     secure: true,
     sameSite: "none",
-    partitioned: true,
   });
   res.json({ message: "Logged out successfully" });
 };

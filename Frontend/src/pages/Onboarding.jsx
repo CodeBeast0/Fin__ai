@@ -4,7 +4,10 @@ import api from "../api/axios";
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(() => {
+    const savedStep = localStorage.getItem("onboarding_step");
+    return savedStep ? parseInt(savedStep, 10) : 1;
+  });
   const [loading, setLoading] = useState(false);
   const [allowance, setAllowance] = useState("");
   const [allowanceDate, setAllowanceDate] = useState("1");
@@ -13,6 +16,11 @@ const Onboarding = () => {
     { name: "", targetAmount: "", estimatedDate: "" },
   ]);
   const [error, setError] = useState("");
+
+  // Persist step to localStorage
+  useEffect(() => {
+    localStorage.setItem("onboarding_step", step);
+  }, [step]);
 
   // Fetch existing user data if editing
   useEffect(() => {
@@ -45,12 +53,16 @@ const Onboarding = () => {
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
-        // If error, just continue with empty form
+        // Handle 401/403 - redirect to home
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          localStorage.removeItem("onboarding_step");
+          navigate("/");
+        }
       }
     };
 
     fetchUserData();
-  }, []);
+  }, [navigate]);
 
   const handleExpenseChange = (index, field, value) => {
     const newExpenses = [...expenses];
@@ -156,6 +168,7 @@ const Onboarding = () => {
       });
 
       console.log("Onboarding API call successful, navigating to dashboard...");
+      localStorage.removeItem("onboarding_step");
       navigate("/dashboard");
     } catch (e) {
       console.error("ONBOARDING ERROR:", e);

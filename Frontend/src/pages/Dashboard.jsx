@@ -54,7 +54,11 @@ const Dashboard = () => {
       }
     } catch (err) {
       console.error("Error fetching dashboard data:", err);
-      setError(err.response?.data?.message || "Failed to load dashboard data");
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        navigate("/");
+      } else {
+        setError(err.response?.data?.message || "Failed to load dashboard data");
+      }
     } finally {
       setLoading(false);
     }
