@@ -297,7 +297,7 @@ export const telegramLink = async (req, res) => {
     console.log(`[API] Link Success - Found user: ${user.email}. Updating TelegramID...`);
 
     user.telegramUserId = telegramUserId;
-    user.telegramLinkToken = null; // Clear token after use
+    user.telegramLinkToken = undefined; // Unset the field to avoid "duplicate key: null" error
     await user.save();
 
     res.json({ success: true, user: { name: user.name } });
