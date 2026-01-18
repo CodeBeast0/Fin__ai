@@ -279,11 +279,19 @@ export const telegramLink = async (req, res) => {
     const { token, telegramUserId } = req.body;
     console.log(`[API] Link Request - Token: '${token}', TelegramID: ${telegramUserId}`);
 
+    // 1. Validate Token
     const user = await User.findOne({ telegramLinkToken: token });
 
     if (!user) {
       console.log(`[API] Link Failed - No user found for token: '${token}'`);
       return res.json({ success: false, message: "Invalid or expired token" });
+    }
+
+    // 2. Check for Duplicate Telegram ID
+    const existingUser = await User.findOne({ telegramUserId: telegramUserId.toString() });
+    if (existingUser && existingUser._id.toString() !== user._id.toString()) {
+      console.log(`[API] Link Failed - Telegram ID ${telegramUserId} already linked to ${existingUser.email}`);
+      return res.json({ success: false, message: "This Telegram account is already linked to another user." });
     }
 
     console.log(`[API] Link Success - Found user: ${user.email}. Updating TelegramID...`);
@@ -294,8 +302,8 @@ export const telegramLink = async (req, res) => {
 
     res.json({ success: true, user: { name: user.name } });
   } catch (err) {
-    console.error("[API] Link Error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error("[API] Link Error Detailed:", err);
+    res.status(500).json({ success: false, message: `Server error: ${err.message}` });
   }
 }
 
