@@ -101,17 +101,17 @@ IMPORTANT: Calculate estimatedDate by adding monthsNeeded to today's date.
         requestBody,
         { headers: { "Content-Type": "application/json" } }
       );
-      break; // Success, exit loop
+      break;
     } catch (err) {
       if (err.response && (err.response.status === 503 || err.response.status === 429)) {
         attempt++;
         console.warn(`Gemini API Error ${err.response.status}. Retrying (${attempt}/${MAX_RETRIES})...`);
         if (attempt >= MAX_RETRIES) throw err;
 
-        const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s...
+        const waitTime = Math.pow(2, attempt) * 1000; 
         await new Promise(resolve => setTimeout(resolve, waitTime));
       } else {
-        throw err; // Other errors (400, 401, etc.) fail immediately
+        throw err;
       }
     }
   }

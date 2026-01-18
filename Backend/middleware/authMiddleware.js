@@ -4,10 +4,6 @@ import User from "../models/user.js";
 export const protect = async (req, res, next) => {
     try {
         let token;
-
-        // Log all incoming auth signals for debugging
-        console.log(`[AUTH-AUDIT] Header Auth: ${req.headers.authorization ? 'PRESENT' : 'MISSING'}`);
-
         if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
             token = req.headers.authorization.split(" ")[1];
         }

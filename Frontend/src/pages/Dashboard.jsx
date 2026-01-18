@@ -70,8 +70,6 @@ const Dashboard = () => {
         });
         setAiPlan(planRes.data.data);
 
-        // RE-FETCH PROFILE: The backend updated estimated dates and savings during the AI plan generation.
-        // We need to fetch the updated profile to show these changes instantly!
         const updatedUserRes = await axios.get(`${API_URL}/users/me`, {
           headers: authHeader,
           withCredentials: false
@@ -179,9 +177,7 @@ const Dashboard = () => {
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: AI Plan & Chart */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Saving Plan Card */}
             <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 md:p-8 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-blue-600/20 transition-all duration-700"></div>
 
@@ -244,7 +240,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Calendar Card */}
             <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 md:p-8">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <span className="w-2 h-8 bg-blue-500 rounded-full"></span>
@@ -259,7 +254,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Savings Progress Card - Separate Block */}
             <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 md:p-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-green-600/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
 
@@ -269,7 +263,6 @@ const Dashboard = () => {
                   Savings Progress
                 </h2>
 
-                {/* Current Savings Display */}
                 <div className="mb-6 bg-[#1a1a1a] p-6 rounded-xl border border-gray-800">
                   <p className="text-sm text-gray-400 mb-2">Total Saved So Far</p>
                   <p className="text-4xl font-bold text-green-400">
@@ -284,7 +277,6 @@ const Dashboard = () => {
                   )}
                 </div>
 
-                {/* Line Chart */}
                 {user?.financeProfile?.savingsHistory && user.financeProfile.savingsHistory.length > 0 ? (
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
@@ -333,7 +325,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Discipline Rules */}
             <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 md:p-8">
               <h2 className="text-xl font-semibold mb-4 text-gray-200">
                 Discipline Rules
@@ -352,9 +343,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Right Column: Goals & Expenses */}
           <div className="space-y-6">
-            {/* Expenses List */}
             <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
               <h3 className="text-lg font-semibold text-gray-300 mb-4 sticky top-0 bg-[#111] pb-2 border-b border-gray-800">
                 Recurring Expenses
@@ -379,7 +368,6 @@ const Dashboard = () => {
                   )}
               </div>
             </div>
-            {/* Goals with Progress Bars */}
 
             <div className="bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-gray-800 rounded-3xl p-6 relative overflow-hidden">
               <div className="absolute bottom-0 left-0 w-full h-1 "></div>
@@ -410,7 +398,6 @@ const Dashboard = () => {
                           </div>
                         </div>
 
-                        {/* Goal Details */}
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           {aiPlan?.goalPlan && idx === 0 && (
                             <>

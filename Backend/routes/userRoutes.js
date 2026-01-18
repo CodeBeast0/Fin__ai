@@ -9,6 +9,6 @@ router.post('/login', login);
 router.post('/logout', logoutUser);
 router.put('/onboarding', protect, updateOnboarding);
 router.get('/AiPlan', protect, generateFinancialPlan);
-router.get('/me', protect, getUserProfile); // New route
+router.get('/me', protect, getUserProfile); 
 
 export default router;

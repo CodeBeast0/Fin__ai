@@ -9,39 +9,33 @@ export const calculateSavingsUpdate = (lastUpdate, allowanceDate, monthlySavings
     const today = new Date();
     const lastUpdateDate = lastUpdate ? new Date(lastUpdate) : null;
 
-    // If no last update, this is the first time
+    
     if (!lastUpdateDate) {
         return {
             shouldUpdate: true,
-            newAmount: 0, // Start at 0
+            newAmount: 0,
             newDate: today
         };
     }
 
-    // Check if we've passed the allowance date since last update
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
     const lastMonth = lastUpdateDate.getMonth();
     const lastYear = lastUpdateDate.getFullYear();
 
-    // Calculate how many months have passed
     let monthsPassed = (currentYear - lastYear) * 12 + (currentMonth - lastMonth);
 
-    // Check if we've passed the allowance day this month
     const currentDay = today.getDate();
     const lastDay = lastUpdateDate.getDate();
 
-    // If we're in the same month and haven't reached the allowance date yet
     if (monthsPassed === 0 && currentDay < allowanceDate) {
         return { shouldUpdate: false };
     }
 
-    // If we're in the same month but have passed the allowance date
     if (monthsPassed === 0 && currentDay >= allowanceDate && lastDay < allowanceDate) {
         monthsPassed = 1;
     }
 
-    // If months have passed, calculate new savings
     if (monthsPassed > 0) {
         return {
             shouldUpdate: true,
@@ -53,17 +47,12 @@ export const calculateSavingsUpdate = (lastUpdate, allowanceDate, monthlySavings
     return { shouldUpdate: false };
 };
 
-/**
- * Get current total savings from history
- */
 export const getCurrentSavings = (savingsHistory) => {
     if (!savingsHistory || savingsHistory.length === 0) return 0;
     return savingsHistory[savingsHistory.length - 1].amount || 0;
 };
 
-/**
- * Generate projected savings data for chart
- */
+
 export const generateProjectedSavings = (monthlySavings, months = 6) => {
     const projections = [];
     const today = new Date();

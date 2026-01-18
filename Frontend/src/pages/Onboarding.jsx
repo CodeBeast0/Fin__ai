@@ -19,12 +19,10 @@ const Onboarding = () => {
   ]);
   const [error, setError] = useState("");
 
-  // Persist step to localStorage
   useEffect(() => {
     localStorage.setItem("onboarding_step", step);
   }, [step]);
 
-  // Fetch existing user data if editing
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem("fley_token");
@@ -37,7 +35,7 @@ const Onboarding = () => {
         const user = response.data;
 
         if (user.financeProfile && user.onboardingCompleted) {
-          // Pre-populate with existing data
+
           if (user.financeProfile.allowance) {
             setAllowance(user.financeProfile.allowance.toString());
           }
@@ -60,7 +58,6 @@ const Onboarding = () => {
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
-        // Handle 401/403 - redirect to home
         if (err.response?.status === 401 || err.response?.status === 403) {
           localStorage.removeItem("onboarding_step");
           localStorage.removeItem("fley_token");
@@ -133,7 +130,6 @@ const Onboarding = () => {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      // Clean data before sending
       const cleanExpenses = expenses
         .filter((e) => e.title && e.amount)
         .map((e) => ({ ...e, amount: Number(e.amount) }));

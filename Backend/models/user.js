@@ -8,7 +8,7 @@ const expenseSchema = new mongoose.Schema({
 const goalSchema = new mongoose.Schema({
   name: String,
   targetAmount: Number,
-  estimatedDate: Date, // estimated completion date
+  estimatedDate: Date,
 });
 
 const userSchema = new mongoose.Schema({
@@ -42,7 +42,7 @@ const userSchema = new mongoose.Schema({
     },
 
     allowanceDate: {
-      type: Number, // Day of month (1-31)
+      type: Number,
       default: 1,
     },
 

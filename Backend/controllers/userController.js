@@ -58,7 +58,7 @@ export const login = async (req, res) => {
 
     res.json({
       message: "Login successful",
-      token, // Return token directly
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -84,12 +84,10 @@ export const updateOnboarding = async (req, res) => {
   try {
     const user = req.user;
 
-    // Preserve existing estimated dates if they exist
     const updatedGoals = goals?.map((newGoal, index) => {
       const existingGoal = user.financeProfile?.goals?.[index];
       return {
         ...newGoal,
-        // Keep existing estimated date if present and new goal doesn't have one
         estimatedDate: newGoal.estimatedDate || existingGoal?.estimatedDate || null
       };
     }) || [];
@@ -177,13 +175,11 @@ export const generateFinancialPlan = async (req, res) => {
       });
     }
 
-    // Calculate and save estimated date to the first goal if AI provided it
     if (hasGoals && aiPlan.goalPlan?.monthsNeeded) {
       const today = new Date();
       const estimatedDate = new Date(today);
       estimatedDate.setMonth(estimatedDate.getMonth() + aiPlan.goalPlan.monthsNeeded);
 
-      // Update the first goal (highest priority) with the estimated date
       if (user.financeProfile.goals[0]) {
         user.financeProfile.goals[0].estimatedDate = estimatedDate;
       }
@@ -191,7 +187,6 @@ export const generateFinancialPlan = async (req, res) => {
 
     user.financeProfile.aiPlan = aiPlan;
 
-    // Initialize savings history if empty
     if (!user.financeProfile.savingsHistory || user.financeProfile.savingsHistory.length === 0) {
       if (aiPlan.monthlySplit?.savings) {
         user.financeProfile.savingsHistory = [{
@@ -224,7 +219,6 @@ export const getUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check if we need to update savings based on allowance date
     if (user.financeProfile?.allowanceDate && user.financeProfile?.aiPlan?.monthlySplit?.savings) {
       const today = new Date();
       const allowanceDay = user.financeProfile.allowanceDate;
@@ -234,7 +228,6 @@ export const getUserProfile = async (req, res) => {
       const lastEntry = savingsHistory.length > 0 ? savingsHistory[savingsHistory.length - 1] : null;
 
       if (!lastEntry) {
-        // First time initialization
         user.financeProfile.savingsHistory = [{
           date: today,
           amount: monthlySavings
@@ -245,11 +238,9 @@ export const getUserProfile = async (req, res) => {
         let currentSavings = lastEntry.amount || 0;
         let updated = false;
 
-        // Move to the expected next allowance date
         checkDate.setMonth(checkDate.getMonth() + 1);
         checkDate.setDate(allowanceDay);
 
-        // Iterate through all missed allowance dates until today
         while (checkDate <= today) {
           currentSavings += monthlySavings;
           user.financeProfile.savingsHistory.push({
@@ -258,9 +249,7 @@ export const getUserProfile = async (req, res) => {
           });
           updated = true;
 
-          // Increment by one month for the next iteration
           checkDate.setMonth(checkDate.getMonth() + 1);
-          // Ensure we stick to the allowance day (in case of month rollover issues)
           checkDate.setDate(allowanceDay);
         }
 

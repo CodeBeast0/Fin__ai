@@ -30,7 +30,7 @@ const Benefits = ({ onDownloadClick }) => {
     return (
         <section id="benefits" className="py-20 px-5 max-w-7xl sm:mx-auto">
             <div className="bg-[#fff] rounded-[40px] px-8 pt-8 md:p-16 flex flex-col-reverse lg:flex-row items-center gap-12 overflow-hidden">
-                {/* Left Side: Phone Mockup */}
+
                 <div className="w-full lg:w-1/2 flex justify-center scale-110 lg:scale-125">
                     <img
                         src="ph.webp"
@@ -39,7 +39,6 @@ const Benefits = ({ onDownloadClick }) => {
                     />
                 </div>
 
-                {/* Right Side: Content */}
                 <div className="w-full lg:w-1/2 p-5 space-y-10">
                     <h2 className="text-4xl  lg:text-5xl w-full font-bold text-black leading-tight">
                         Tired of reckless spending habits?
