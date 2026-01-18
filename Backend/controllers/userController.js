@@ -277,17 +277,24 @@ export const getUserProfile = async (req, res) => {
 export const telegramLink = async (req, res) => {
   try {
     const { token, telegramUserId } = req.body;
+    console.log(`[API] Link Request - Token: '${token}', TelegramID: ${telegramUserId}`);
 
     const user = await User.findOne({ telegramLinkToken: token });
-    if (!user) return res.json({ success: false, message: "Invalid token" });
+
+    if (!user) {
+      console.log(`[API] Link Failed - No user found for token: '${token}'`);
+      return res.json({ success: false, message: "Invalid or expired token" });
+    }
+
+    console.log(`[API] Link Success - Found user: ${user.email}. Updating TelegramID...`);
 
     user.telegramUserId = telegramUserId;
-    user.telegramLinkToken = null;
+    user.telegramLinkToken = null; // Clear token after use
     await user.save();
 
-    res.json({ success: true, user });
+    res.json({ success: true, user: { name: user.name } });
   } catch (err) {
-    console.error(err);
+    console.error("[API] Link Error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 }
@@ -332,6 +339,8 @@ export const generateTelegramToken = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const token = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log(`[API] Generated Token for ${user.email}: ${token}`);
+
     user.telegramLinkToken = token;
     await user.save();
 

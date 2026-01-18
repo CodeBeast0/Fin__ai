@@ -40,29 +40,47 @@ app.post("/telegram-bot/webhook", async (req, res) => {
         chat_id: chatId,
         text: HELP_MESSAGE,
       });
-    } else if (text.startsWith("/link ")) {
-      const token = text.split(" ")[1];
-      const resApi = await axios.post(`${API_URL}/users/link-telegram`, {
-        token,
-        telegramUserId: chatId,
-      });
+    } else if (text.startsWith("/link")) {
+      // Robust token parsing: splits by spaces and takes the second part
+      const parts = text.split(/\s+/);
+      const token = parts[1];
 
-      if (resApi.data.success) {
+      if (!token) {
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
           chat_id: chatId,
-          text: `✅ Linked successfully! Welcome, ${resApi.data.user.name}`,
+          text: "💡 Usage: /link <token>\nYou can generate a token in the Fley Dashboard.",
         });
-      } else {
+        return res.sendStatus(200);
+      }
+
+      console.log(`[BOT] Attempting to link with token: '${token}' for chat ID: ${chatId}`);
+
+      try {
+        const resApi = await axios.post(`${API_URL}/users/link-telegram`, {
+          token,
+          telegramUserId: chatId,
+        });
+
+        console.log("[BOT] Link API Response:", resApi.data);
+
+        if (resApi.data.success) {
+          await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+            chat_id: chatId,
+            text: `✅ Linked successfully! Welcome, ${resApi.data.user.name}`,
+          });
+        } else {
+          await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+            chat_id: chatId,
+            text: `❌ Link failed: ${resApi.data.message || 'Invalid or expired token.'}`,
+          });
+        }
+      } catch (apiError) {
+        console.error("[BOT] Link API Error:", apiError.response?.data || apiError.message);
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
           chat_id: chatId,
-          text: "❌ Invalid or expired token.",
+          text: "❌ Service unavailable. Please try again later.",
         });
       }
-    } else if (text === "/link") {
-      await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
-        chat_id: chatId,
-        text: "💡 Usage: /link <token>\nYou can generate a token in the Fley Dashboard.",
-      });
     } else if (text.startsWith("/spend ")) {
       const parts = text.split(" ");
       const amount = parseFloat(parts[1]);
