@@ -1,6 +1,18 @@
 import TelegramBot from "node-telegram-bot-api";
 import dotenv from "dotenv";
 import axios from "axios";
+import http from "http";
+
+// Create a dummy server to satisfy Render's port requirement
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Telegram Bot is running!");
+});
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Web server listening on port ${PORT}`);
+});
 
 dotenv.config();
 
