@@ -186,6 +186,8 @@ export const generateFinancialPlan = async (req, res) => {
     }
 
     user.financeProfile.aiPlan = aiPlan;
+    user.financeProfile.entertainment = aiPlan.monthlySplit.entertainment;
+    user.financeProfile.variableExpenses = [];
 
     if (!user.financeProfile.savingsHistory || user.financeProfile.savingsHistory.length === 0) {
       if (aiPlan.monthlySplit?.savings) {
@@ -266,6 +268,74 @@ export const getUserProfile = async (req, res) => {
       onboardingCompleted: user.onboardingCompleted,
       financeProfile: user.financeProfile
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const telegramLink = async (req, res) => {
+  try {
+    const { token, telegramUserId } = req.body;
+
+    const user = await User.findOne({ telegramLinkToken: token });
+    if (!user) return res.json({ success: false, message: "Invalid token" });
+
+    user.telegramUserId = telegramUserId;
+    user.telegramLinkToken = null;
+    await user.save();
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+}
+
+export const Spend = async (req, res) => {
+  try {
+    const { telegramUserId, amount, title } = req.body;
+
+    const user = await User.findOne({ telegramUserId });
+    if (!user) return res.json({ success: false, message: "User not linked" });
+
+    user.financeProfile.entertainment -= amount;
+    if (!user.financeProfile.variableExpenses) user.financeProfile.variableExpenses = [];
+    user.financeProfile.variableExpenses.push({ title, amount });
+    await user.save();
+
+    res.json({
+      success: true,
+      remainingEntertainment: user.financeProfile.entertainment,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+export const getUserByTelegramId = async (req, res) => {
+  try {
+    const telegramUserId = req.params.telegramId;
+    const user = await User.findOne({ telegramUserId });
+    if (!user) return res.json(null);
+
+    res.json(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+export const generateTelegramToken = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
+    user.telegramLinkToken = token;
+    await user.save();
+
+    res.json({ success: true, token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });

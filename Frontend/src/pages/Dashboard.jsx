@@ -26,6 +26,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [telegramToken, setTelegramToken] = useState("");
+  const [generatingToken, setGeneratingToken] = useState(false);
 
   const handleLogout = async () => {
     const token = localStorage.getItem("fley_token");
@@ -47,6 +49,22 @@ const Dashboard = () => {
 
   const handleEditProfile = () => {
     navigate("/onboarding");
+  };
+
+  const handleGenerateToken = async () => {
+    const token = localStorage.getItem("fley_token");
+    setGeneratingToken(true);
+    try {
+      const res = await axios.post(`${API_URL}/users/generate-telegram-token`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setTelegramToken(res.data.token);
+    } catch (err) {
+      console.error("Token generation error:", err);
+      alert("Failed to generate token");
+    } finally {
+      setGeneratingToken(false);
+    }
   };
 
   const fetchData = async () => {
@@ -194,7 +212,7 @@ const Dashboard = () => {
                         Entertainment Budget
                       </span>
                       <span className="text-xl font-bold text-blue-400">
-                        ${aiPlan?.monthlySplit.entertainment}
+                        ${user?.financeProfile?.entertainment !== undefined ? user.financeProfile.entertainment.toFixed(2) : aiPlan?.monthlySplit.entertainment}
                       </span>
                     </div>
                     <div className="flex justify-between items-center bg-[#1a1a1a] p-4 rounded-xl border border-gray-800">
@@ -346,6 +364,31 @@ const Dashboard = () => {
           <div className="space-y-6">
             <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
               <h3 className="text-lg font-semibold text-gray-300 mb-4 sticky top-0 bg-[#111] pb-2 border-b border-gray-800">
+                Recent Transactions
+              </h3>
+              <div className="space-y-3">
+                {user?.financeProfile?.variableExpenses?.slice().reverse().map((exp, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center py-2 border-b border-gray-800 last:border-0 hover:bg-white/5 px-2 rounded-lg transition-colors"
+                  >
+                    <span className="text-gray-400">{exp.title}</span>
+                    <span className="text-white font-medium">
+                      -${exp.amount}
+                    </span>
+                  </div>
+                ))}
+                {(!user?.financeProfile?.variableExpenses ||
+                  user.financeProfile.variableExpenses.length === 0) && (
+                    <p className="text-gray-500 text-sm text-center py-4">
+                      No recent transactions.
+                    </p>
+                  )}
+              </div>
+            </div>
+
+            <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 max-h-[400px] overflow-y-auto custom-scrollbar">
+              <h3 className="text-lg font-semibold text-gray-300 mb-4 sticky top-0 bg-[#111] pb-2 border-b border-gray-800">
                 Recurring Expenses
               </h3>
               <div className="space-y-3">
@@ -368,7 +411,6 @@ const Dashboard = () => {
                   )}
               </div>
             </div>
-
             <div className="bg-gradient-to-br from-[#111] to-[#0a0a0a] border border-gray-800 rounded-3xl p-6 relative overflow-hidden">
               <div className="absolute bottom-0 left-0 w-full h-1 "></div>
               <h3 className="text-lg font-semibold text-gray-300 mb-4">
@@ -436,6 +478,44 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <p className="text-gray-500 italic">No specific goals set.</p>
+              )}
+            </div>
+
+            <div className="bg-[#111] border border-gray-800 rounded-3xl p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl"></div>
+              <h3 className="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5 text-[#24A1DE]" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11.944 0C5.352 0 0 5.352 0 12s5.352 12 12 12 12-5.352 12-12S18.528 0 11.944 0zm5.556 8.333l-1.898 8.941c-.143.64-.521.797-1.056.497l-2.889-2.128-1.394 1.341c-.153.153-.283.283-.58.283l.207-2.937 5.348-4.828c.231-.207-.052-.321-.358-.117L8.067 12.01 5.222 11.12c-.62-.194-.633-.62.13-.918l11.107-4.282c.513-.186.963.125.741 1.413z" />
+                </svg>
+                Telegram Assistant
+              </h3>
+              <p className="text-sm text-gray-400 mb-6">
+                Link your account to our Telegram bot to track spending on the go.
+              </p>
+
+              {!telegramToken ? (
+                <button
+                  onClick={handleGenerateToken}
+                  disabled={generatingToken}
+                  className="w-full bg-[#24A1DE] hover:bg-[#1C8DBC] disabled:bg-gray-700 text-white font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                >
+                  {generatingToken ? "Generating..." : "Generate Link Token"}
+                </button>
+              ) : (
+                <div className="space-y-4">
+                  <div className="bg-black/40 border border-[#24A1DE]/30 p-4 rounded-xl text-center">
+                    <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Your Token</p>
+                    <p className="text-3xl font-mono font-bold text-[#24A1DE] tracking-[0.2em]">
+                      {telegramToken}
+                    </p>
+                  </div>
+                  <div className="bg-blue-600/5 border border-blue-600/10 p-3 rounded-lg">
+                    <p className="text-xs text-blue-400/80 leading-relaxed">
+                      1. Open <a href="https://t.me/Fley_finance_bot" target="_blank" className="underline">@Fley_finance_bot</a><br />
+                      2. Type <code className="bg-black/50 px-1 rounded">/link {telegramToken}</code>
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -510,7 +590,7 @@ const Dashboard = () => {
           background: #444;
         }
       `}</style>
-    </div>
+    </div >
   );
 };
 

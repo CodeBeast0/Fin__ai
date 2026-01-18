@@ -55,11 +55,24 @@ const userSchema = new mongoose.Schema({
       amount: Number,
     }],
 
+    entertainment: {
+      type: Number,
+      default: 0,
+    },
+    variableExpenses: [{
+      title: String,
+      amount: Number,
+      date: {
+        type: Date,
+        default: Date.now,
+      }
+    }],
     aiPlan: {
       monthlySplit: {
         entertainment: Number,
         savings: Number,
       },
+      // Removed duplicate entertainment field from inside aiPlan as it's now at financeProfile level
       goalPlan: {
         goal: String,
         monthlySaving: Number,
@@ -73,6 +86,16 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  telegramUserId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
+  telegramLinkToken: {
+    type: String,
+    unique: true,
+    sparse: true,
   },
 });
 
