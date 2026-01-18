@@ -24,7 +24,7 @@ Commands:
 // Telegram webhook route
 app.post("/telegram-bot/webhook", async (req, res) => {
   const update = req.body;
-  // console.log("Update received:", update);
+  // console.log("Update received:", JSON.stringify(update, null, 2)); // Uncomment for debugging
 
   if (!update.message || !update.message.text) {
     return res.sendStatus(200); // ignore non-text messages
@@ -151,7 +151,9 @@ app.post("/telegram-bot/webhook", async (req, res) => {
     res.sendStatus(200); // always respond 200 to Telegram
   } catch (err) {
     console.error("Telegram bot error:", err.response?.data || err.message);
-    res.sendStatus(500);
+    // IMPORTANT: Return 200 even if there was an error sending the message,
+    // otherwise Telegram will keep retrying the webhook forever.
+    res.sendStatus(200);
   }
 });
 
