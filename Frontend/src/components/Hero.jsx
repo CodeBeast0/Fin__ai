@@ -6,7 +6,7 @@ const Hero = ({ onDownloadClick }) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   return (
-    <div className='min-h-screen w-full py-5'>
+    <div className='min-h-screen w-full pt-5'>
       <Navbar onDownloadClick={onDownloadClick} />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <div className="flex flex-col lg:flex-row items-center justify-between w-3/4 mx-auto  md:mt-20 gap-10">
