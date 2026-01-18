@@ -1,25 +1,14 @@
-import TelegramBot from "node-telegram-bot-api";
+import express from "express";
 import dotenv from "dotenv";
 import axios from "axios";
-import http from "http";
-
-// Create a dummy server to satisfy Render's port requirement
-const server = http.createServer((req, res) => {
-  res.writeHead(200, { "Content-Type": "text/plain" });
-  res.end("Telegram Bot is running!");
-});
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Web server listening on port ${PORT}`);
-});
 
 dotenv.config();
 
 const API_URL = process.env.API_URL || "http://localhost:5000/api";
+const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true });
-console.log("🤖 Telegram bot is running...");
+const app = express();
+app.use(express.json()); // parse JSON from Telegram
 
 const HELP_MESSAGE = `👋 Welcome to Fley Finance Bot!
 
@@ -32,167 +21,140 @@ Commands:
 /stats - show your spending stats
 /help - this message`;
 
-// Set commands for the menu button
-bot.setMyCommands([
-  { command: "/start", description: "Start the bot" },
-  { command: "/balance", description: "Check balance" },
-  { command: "/spend", description: "Add expense" },
-  { command: "/stats", description: "View stats" },
-  { command: "/link", description: "Link account" },
-  { command: "/help", description: "Show help" },
-]);
+// Telegram webhook route
+app.post("/telegram-bot/webhook", async (req, res) => {
+  const update = req.body;
+  // console.log("Update received:", update);
 
-bot.onText(/\/start/, (msg) => {
-  bot.sendMessage(msg.chat.id, HELP_MESSAGE);
-});
-
-bot.onText(/\/help/, (msg) => {
-  bot.sendMessage(msg.chat.id, HELP_MESSAGE);
-});
-
-bot.onText(/\/link$/, (msg) => {
-  bot.sendMessage(msg.chat.id, "💡 Usage: /link <token>\nYou can generate a token in the Fley Dashboard.");
-});
-
-bot.onText(/\/link (.+)/, async (msg, match) => {
-  const chatId = msg.chat.id;
-  const token = match[1];
-
-  try {
-    const res = await axios.post(`${API_URL}/users/link-telegram`, {
-      token,
-      telegramUserId: chatId,
-    });
-
-    if (res.data.success) {
-      bot.sendMessage(
-        chatId,
-        `✅ Linked successfully! Welcome, ${res.data.user.name}`,
-      );
-    } else {
-      bot.sendMessage(chatId, `❌ Invalid or expired token.`);
-    }
-  } catch (err) {
-    console.error(err.message);
-    bot.sendMessage(
-      chatId,
-      `❌ Something went wrong while linking your account.`,
-    );
+  if (!update.message || !update.message.text) {
+    return res.sendStatus(200); // ignore non-text messages
   }
-});
 
-bot.onText(/\/spend$/, (msg) => {
-  bot.sendMessage(msg.chat.id, "💡 Usage: /spend <amount> <title>\nExample: /spend 10 Coffee");
-});
-
-bot.onText(/\/spend (\d+\.?\d*) (.+)/, async (msg, match) => {
-  const chatId = msg.chat.id;
-  const amount = parseFloat(match[1]);
-  const title = match[2];
+  const chatId = update.message.chat.id;
+  const text = update.message.text.trim();
 
   try {
-    const res = await axios.post(`${API_URL}/users/spend`, {
-      telegramUserId: chatId,
-      amount,
-      title,
-    });
+    // --- Handle commands ---
+    if (text === "/start" || text === "/help") {
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+        chat_id: chatId,
+        text: HELP_MESSAGE,
+      });
+    } else if (text.startsWith("/link ")) {
+      const token = text.split(" ")[1];
+      const resApi = await axios.post(`${API_URL}/users/link-telegram`, {
+        token,
+        telegramUserId: chatId,
+      });
 
-    if (res.data.success) {
-      bot.sendMessage(chatId, `✅ Expense added: $${amount} for ${title}`);
+      if (resApi.data.success) {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: `✅ Linked successfully! Welcome, ${resApi.data.user.name}`,
+        });
+      } else {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: "❌ Invalid or expired token.",
+        });
+      }
+    } else if (text === "/link") {
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+        chat_id: chatId,
+        text: "💡 Usage: /link <token>\nYou can generate a token in the Fley Dashboard.",
+      });
+    } else if (text.startsWith("/spend ")) {
+      const parts = text.split(" ");
+      const amount = parseFloat(parts[1]);
+      const title = parts.slice(2).join(" ");
 
-      if (res.data.remainingEntertainment <= 0) {
-        bot.sendMessage(chatId, "⚠️ Your entertainment budget is empty!");
+      const resApi = await axios.post(`${API_URL}/users/spend`, {
+        telegramUserId: chatId,
+        amount,
+        title,
+      });
+
+      if (resApi.data.success) {
+        let msg = `✅ Expense added: $${amount} for ${title}`;
+        if (resApi.data.remainingEntertainment <= 0) {
+          msg += "\n⚠️ Your entertainment budget is empty!";
+        }
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: msg,
+        });
+      } else {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: `❌ Failed to add expense: ${resApi.data.message}`,
+        });
+      }
+    } else if (text === "/spend") {
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+        chat_id: chatId,
+        text: "💡 Usage: /spend <amount> <title>\nExample: /spend 10 Coffee",
+      });
+    } else if (text === "/balance") {
+      const resApi = await axios.get(`${API_URL}/users/by-telegram/${chatId}`);
+      const user = resApi.data;
+
+      if (!user) {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: "❌ User not linked!",
+        });
+      } else {
+        const entertainment = user.financeProfile?.entertainment ?? (user.financeProfile?.aiPlan?.monthlySplit?.entertainment || 0);
+        const savingsHistory = user.financeProfile?.savingsHistory || [];
+        const totalSaved = savingsHistory.length > 0 ? savingsHistory[savingsHistory.length - 1].amount : 0;
+
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: `💰 Your Financial Status:\n\n📺 Entertainment: $${entertainment.toFixed(2)}\n🏦 Total Saved: $${totalSaved.toFixed(2)}\n\nKeep it up! 🚀`,
+        });
+      }
+    } else if (text === "/stats") {
+      const resApi = await axios.get(`${API_URL}/users/by-telegram/${chatId}`);
+      const user = resApi.data;
+
+      if (!user) {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: "❌ User not linked!",
+        });
+      } else {
+        const expenses = user.financeProfile?.expenses || [];
+        const totalRecur = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+        const variableExpenses = user.financeProfile?.variableExpenses || [];
+        const totalVariable = variableExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+        const totalSpent = totalRecur + totalVariable;
+
+        const goals = user.financeProfile?.goals || [];
+        const goalsList = goals.map(g => `🎯 ${g.name}: $${g.targetAmount}`).join("\n");
+
+        const msg = `📊 Your Spending Stats:\n\n💸 Total recurring expenses: $${totalRecur.toFixed(2)}\n🛒 Recent One-off spends: $${totalVariable.toFixed(2)}\n📉 Total Spent: $${totalSpent.toFixed(2)}\n📝 Recurring items: ${expenses.length}\n\n${goals.length > 0 ? `Your Goals:\n${goalsList}` : "No goals set yet."}\n\nStay disciplined! 🛡️`;
+
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: msg,
+        });
       }
     } else {
-      bot.sendMessage(chatId, `❌ Failed to add expense: ${res.data.message}`);
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+        chat_id: chatId,
+        text: "❓ Unknown command. Type /help to see available commands.",
+      });
     }
+
+    res.sendStatus(200); // always respond 200 to Telegram
   } catch (err) {
-    console.error(err.message);
-    bot.sendMessage(chatId, `❌ Something went wrong while adding expense.`);
+    console.error("Telegram bot error:", err.response?.data || err.message);
+    res.sendStatus(500);
   }
 });
 
-bot.onText(/\/balance/, async (msg) => {
-  const chatId = msg.chat.id;
-
-  try {
-    const res = await axios.get(`${API_URL}/users/by-telegram/${chatId}`);
-    const user = res.data;
-
-    if (!user) return bot.sendMessage(chatId, "❌ User not linked!");
-
-    // Use the tracking entertainment field, or fallback to the plan's initial budget if not yet set
-    const entertainment = user.financeProfile?.entertainment !== undefined
-      ? user.financeProfile.entertainment
-      : (user.financeProfile?.aiPlan?.monthlySplit?.entertainment || 0);
-    const savingsHistory = user.financeProfile?.savingsHistory || [];
-    const totalSaved = savingsHistory.length > 0 ? savingsHistory[savingsHistory.length - 1].amount : 0;
-
-    bot.sendMessage(
-      chatId,
-      `💰 Your Financial Status:
-      
-📺 Entertainment: $${entertainment.toFixed(2)}
-🏦 Total Saved: $${totalSaved.toFixed(2)}
-
-Keep it up! 🚀`,
-    );
-  } catch (err) {
-    console.error(err.message);
-    bot.sendMessage(chatId, "❌ Failed to fetch balance.");
-  }
-});
-
-bot.onText(/\/stats/, async (msg) => {
-  const chatId = msg.chat.id;
-
-  try {
-    const res = await axios.get(`${API_URL}/users/by-telegram/${chatId}`);
-    const user = res.data;
-
-    if (!user) return bot.sendMessage(chatId, "❌ User not linked!");
-
-    const expenses = user.financeProfile?.expenses || [];
-    const totalRecur = expenses.reduce((sum, e) => sum + e.amount, 0);
-
-    const variableExpenses = user.financeProfile?.variableExpenses || [];
-    const totalVariable = variableExpenses.reduce((sum, e) => sum + e.amount, 0);
-
-    const totalSpent = totalRecur + totalVariable;
-
-    const goals = user.financeProfile?.goals || [];
-    const goalsList = goals.map(g => `🎯 ${g.name}: $${g.targetAmount}`).join("\n");
-
-    bot.sendMessage(
-      chatId,
-      `📊 Your Spending Stats:
-
-💸 Total recurring expenses: $${totalRecur.toFixed(2)}
-🛒 Recent One-off spends: $${totalVariable.toFixed(2)}
-📉 Total Spent: $${totalSpent.toFixed(2)}
-📝 Recurring items: ${expenses.length}
-
-${goals.length > 0 ? `Your Goals:\n${goalsList}` : "No goals set yet."}
-
-Stay disciplined! 🛡️`,
-    );
-  } catch (err) {
-    console.error(err.message);
-    bot.sendMessage(chatId, "❌ Failed to fetch stats.");
-  }
-});
-
-bot.on("message", (msg) => {
-  const chatId = msg.chat.id;
-  if (!msg.text || !msg.text.startsWith("/")) return;
-
-  const validCommands = ["/start", "/link", "/spend", "/balance", "/stats", "/help"];
-  const isKnownCommand = validCommands.some((cmd) => msg.text.startsWith(cmd));
-
-  if (!isKnownCommand) {
-    bot.sendMessage(
-      chatId,
-      "❓ Unknown command. Type /help to see available commands.",
-    );
-  }
-});
+// Start the Express server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Telegram bot running on port ${PORT}`));
