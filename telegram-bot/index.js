@@ -8,7 +8,7 @@ const API_URL = process.env.API_URL || "http://localhost:5000/api";
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 const app = express();
-app.use(express.json()); // parse JSON from Telegram
+app.use(express.json());
 
 const HELP_MESSAGE = `👋 Welcome to Fley Finance Bot!
 
@@ -18,6 +18,8 @@ Commands:
 /link <token> - link your account
 /spend <amount> <title> - add expense
 /balance - show your allowance and savings
+/summary - show monthly summary
+/last - show recent transactions
 /stats - show your spending stats
 /help - this message`;
 
@@ -93,13 +95,21 @@ app.post("/telegram-bot/webhook", async (req, res) => {
       });
 
       if (resApi.data.success) {
-        let msg = `✅ Expense added: $${amount} for ${title}`;
-        if (resApi.data.remainingEntertainment <= 0) {
-          msg += "\n⚠️ Your entertainment budget is empty!";
-        }
+        // 1. Success Message
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
           chat_id: chatId,
-          text: msg,
+          text: `Expense added ${title} ....`,
+        });
+
+        // 2. Updated Balance Message
+        const remaining = resApi.data.remainingEntertainment;
+        const saved = resApi.data.totalSaved || 0;
+
+        const balanceMsg = `💰 Updated Balance:\n\n📺 Entertainment left: $${remaining.toFixed(2)}\n🏦 Saved: $${saved.toFixed(2)}`;
+
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: balanceMsg,
         });
       } else {
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
@@ -159,6 +169,94 @@ app.post("/telegram-bot/webhook", async (req, res) => {
           text: msg,
         });
       }
+    } else if (text === "/summary") {
+      const resApi = await axios.get(`${API_URL}/users/by-telegram/${chatId}`);
+      const user = resApi.data;
+
+      if (!user) {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: "❌ User not linked!",
+        });
+      } else {
+        const fp = user.financeProfile;
+
+        // Calculate totals
+        const allowance = fp?.allowance || 0;
+        const expenses = fp?.expenses || [];
+        const variableExpenses = fp?.variableExpenses || [];
+
+        const totalRecurring = expenses.reduce((sum, e) => sum + e.amount, 0);
+        const totalVariable = variableExpenses.reduce((sum, e) => sum + e.amount, 0);
+        const totalSpent = totalRecurring + totalVariable;
+
+        const entertainmentLeft = fp?.entertainment ?? (fp?.aiPlan?.monthlySplit?.entertainment || 0);
+
+        // Savings
+        const savingsHistory = fp?.savingsHistory || [];
+        const totalSaved = savingsHistory.length > 0 ? savingsHistory[savingsHistory.length - 1].amount : 0;
+
+        // Goals
+        const goals = fp?.goals || [];
+        let goalMsg = "🎯 Goal: None set";
+        let timeMsg = "";
+
+        if (goals.length > 0) {
+          const goal = goals[0];
+          goalMsg = `🎯 Goal: ${goal.name}`;
+
+          if (goal.estimatedDate) {
+            const today = new Date();
+            const targetDate = new Date(goal.estimatedDate);
+            const diffTime = Math.abs(targetDate - today);
+            const diffMonths = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 30));
+            timeMsg = `⏳ ${diffMonths} months remaining`;
+          }
+        }
+
+        const msg = `📊 Monthly Summary
+
+💰 Allowance: $${allowance}
+💸 Spent: $${totalSpent}
+📺 Entertainment left: $${entertainmentLeft.toFixed(2)}
+🏦 Saved: $${totalSaved.toFixed(2)}
+
+${goalMsg}
+${timeMsg}`;
+
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: msg,
+        });
+      }
+    } else if (text === "/last") {
+      const resApi = await axios.get(`${API_URL}/users/by-telegram/${chatId}`);
+      const user = resApi.data;
+
+      if (!user) {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: "❌ User not linked!",
+        });
+      } else {
+        const variableExpenses = user.financeProfile?.variableExpenses || [];
+
+        if (variableExpenses.length === 0) {
+          await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+            chat_id: chatId,
+            text: "No recent transactions found.",
+          });
+        } else {
+          // Get last 10 transactions, reversed
+          const recent = variableExpenses.slice(-10).reverse();
+          const list = recent.map(e => `• ${e.title}: $${e.amount}`).join("\n");
+
+          await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+            chat_id: chatId,
+            text: `Recent Transactions:\n\n${list}`,
+          });
+        }
+      }
     } else {
       await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
         chat_id: chatId,
@@ -166,15 +264,33 @@ app.post("/telegram-bot/webhook", async (req, res) => {
       });
     }
 
-    res.sendStatus(200); // always respond 200 to Telegram
+    res.sendStatus(200);
   } catch (err) {
     console.error("Telegram bot error:", err.response?.data || err.message);
-    // IMPORTANT: Return 200 even if there was an error sending the message,
-    // otherwise Telegram will keep retrying the webhook forever.
     res.sendStatus(200);
   }
 });
 
-// Start the Express server
+// --- Keep-Alive Mechanism ---
+const SELF_URL = process.env.SELF_URL;
+// e.g. https://my-bot.onrender.com
+// You MUST set this env var in Render.
+
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+if (SELF_URL) {
+  // Ping itself every 14 minutes (Render sleeps after 15m inactivity)
+  setInterval(() => {
+    axios.get(`${SELF_URL}/health`)
+      .then(() => console.log(`[Keep-Alive] Pinged ${SELF_URL}`))
+      .catch(err => console.error(`[Keep-Alive] Ping failed: ${err.message}`));
+  }, 14 * 60 * 1000);
+} else {
+  console.warn("[Keep-Alive] SELF_URL not set. Bot may sleep on free hosting.");
+}
+
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Telegram bot running on port ${PORT}`));

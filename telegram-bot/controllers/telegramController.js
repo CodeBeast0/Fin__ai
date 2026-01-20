@@ -9,10 +9,10 @@ export const telegramWebhook = async (req, res) => {
       const chatId = update.message.chat.id;
       const text = update.message.text;
 
-      // Reply to user
+    
       await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`, {
         chat_id: chatId,
-        text: `You said: ${text}`, // Replace with AI financial logic later
+        text: `You said: ${text}`,
       });
     }
 

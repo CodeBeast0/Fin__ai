@@ -319,9 +319,13 @@ export const Spend = async (req, res) => {
     user.financeProfile.variableExpenses.push({ title, amount });
     await user.save();
 
+    const savingsHistory = user.financeProfile.savingsHistory || [];
+    const totalSaved = savingsHistory.length > 0 ? savingsHistory[savingsHistory.length - 1].amount : 0;
+
     res.json({
       success: true,
       remainingEntertainment: user.financeProfile.entertainment,
+      totalSaved,
     });
   } catch (err) {
     console.error(err);
