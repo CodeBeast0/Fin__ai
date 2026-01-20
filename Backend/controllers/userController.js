@@ -28,7 +28,7 @@ export const registerUser = async (req, res) => {
 
     res.status(201).json({
       message: "User registered successfully",
-      token, // Return token directly
+      token, 
       user: {
         id: user._id,
         name: user.name,
@@ -279,7 +279,7 @@ export const telegramLink = async (req, res) => {
     const { token, telegramUserId } = req.body;
     console.log(`[API] Link Request - Token: '${token}', TelegramID: ${telegramUserId}`);
 
-    // 1. Validate Token
+   
     const user = await User.findOne({ telegramLinkToken: token });
 
     if (!user) {
@@ -287,7 +287,7 @@ export const telegramLink = async (req, res) => {
       return res.json({ success: false, message: "Invalid or expired token" });
     }
 
-    // 2. Check for Duplicate Telegram ID
+    
     const existingUser = await User.findOne({ telegramUserId: telegramUserId.toString() });
     if (existingUser && existingUser._id.toString() !== user._id.toString()) {
       console.log(`[API] Link Failed - Telegram ID ${telegramUserId} already linked to ${existingUser.email}`);
@@ -297,7 +297,7 @@ export const telegramLink = async (req, res) => {
     console.log(`[API] Link Success - Found user: ${user.email}. Updating TelegramID...`);
 
     user.telegramUserId = telegramUserId;
-    user.telegramLinkToken = undefined; // Unset the field to avoid "duplicate key: null" error
+    user.telegramLinkToken = undefined;
     await user.save();
 
     res.json({ success: true, user: { name: user.name } });

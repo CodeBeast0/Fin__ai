@@ -23,27 +23,27 @@ Commands:
 /stats - show your spending stats
 /help - this message`;
 
-// Telegram webhook route
+
 app.post("/telegram-bot/webhook", async (req, res) => {
   const update = req.body;
-  // console.log("Update received:", JSON.stringify(update, null, 2)); // Uncomment for debugging
+  
 
   if (!update.message || !update.message.text) {
-    return res.sendStatus(200); // ignore non-text messages
+    return res.sendStatus(200); 
   }
 
   const chatId = update.message.chat.id;
   const text = update.message.text.trim();
 
   try {
-    // --- Handle commands ---
+   
     if (text === "/start" || text === "/help") {
       await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
         chat_id: chatId,
         text: HELP_MESSAGE,
       });
     } else if (text.startsWith("/link")) {
-      // Robust token parsing: splits by spaces and takes the second part
+      
       const parts = text.split(/\s+/);
       const token = parts[1];
 
@@ -95,13 +95,13 @@ app.post("/telegram-bot/webhook", async (req, res) => {
       });
 
       if (resApi.data.success) {
-        // 1. Success Message
+        
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
           chat_id: chatId,
           text: `Expense added ${title} ....`,
         });
 
-        // 2. Updated Balance Message
+
         const remaining = resApi.data.remainingEntertainment;
         const saved = resApi.data.totalSaved || 0;
 
@@ -181,7 +181,6 @@ app.post("/telegram-bot/webhook", async (req, res) => {
       } else {
         const fp = user.financeProfile;
 
-        // Calculate totals
         const allowance = fp?.allowance || 0;
         const expenses = fp?.expenses || [];
         const variableExpenses = fp?.variableExpenses || [];
@@ -192,11 +191,9 @@ app.post("/telegram-bot/webhook", async (req, res) => {
 
         const entertainmentLeft = fp?.entertainment ?? (fp?.aiPlan?.monthlySplit?.entertainment || 0);
 
-        // Savings
         const savingsHistory = fp?.savingsHistory || [];
         const totalSaved = savingsHistory.length > 0 ? savingsHistory[savingsHistory.length - 1].amount : 0;
 
-        // Goals
         const goals = fp?.goals || [];
         let goalMsg = "🎯 Goal: None set";
         let timeMsg = "";
@@ -247,7 +244,6 @@ ${timeMsg}`;
             text: "No recent transactions found.",
           });
         } else {
-          // Get last 10 transactions, reversed
           const recent = variableExpenses.slice(-10).reverse();
           const list = recent.map(e => `• ${e.title}: $${e.amount}`).join("\n");
 
@@ -271,17 +267,14 @@ ${timeMsg}`;
   }
 });
 
-// --- Keep-Alive Mechanism ---
 const SELF_URL = process.env.SELF_URL;
-// e.g. https://my-bot.onrender.com
-// You MUST set this env var in Render.
+
 
 app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
 
 if (SELF_URL) {
-  // Ping itself every 14 minutes (Render sleeps after 15m inactivity)
   setInterval(() => {
     axios.get(`${SELF_URL}/health`)
       .then(() => console.log(`[Keep-Alive] Pinged ${SELF_URL}`))

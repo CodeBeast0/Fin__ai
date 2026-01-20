@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema({
         entertainment: Number,
         savings: Number,
       },
-      // Removed duplicate entertainment field from inside aiPlan as it's now at financeProfile level
+      
       goalPlan: {
         goal: String,
         monthlySaving: Number,
