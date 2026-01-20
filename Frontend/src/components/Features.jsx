@@ -3,21 +3,21 @@ import React from "react";
 const Features = () => {
     const featureList = [
         {
-            title: "Snap or Forward",
-            description: "Simply take a photo of your receipt with your phone or forward it directly to your Expense AI email address.",
-            image: "snap.svg", 
+            title: "Telegram Bot Integration",
+            description: "The Telegram bot acts as a real-time financial assistant connected to the website. Users can send messages to the bot to add expenses immediately after making a purchase, and the system will automatically update the balance.",
+            image: "bot.png", 
             bgColor: "bg-[#F5F5F0]",
         },
         {
-            title: "AI Extraction",
-            description: "Our AI engine instantly extracts key information from your receipt, including the amount, merchant, date, and even product details.",
-            image: "ex.webp", 
+            title: "Expense Tracking",
+            description: "Users can record their expenses directly from the website or through the Telegram bot. Each expense includes an amount, date, category, and optional description.",
+            image: "pp.webp", 
             bgColor: "bg-[#F5F5F0]",
         },
         {
-            title: "Chat with your expense data",
-            description: "Gain valuable insights and patterns on your expenses with our AI to make more informed financial decisions.",
-            image: "chat.svg",
+            title: "Smart Insights and Alerts",
+            description: "Based on collected financial data, the platform generates smart insights such as overspending warnings, monthly comparisons, and budget usage indicators.",
+            image: "ppp.webp",
             bgColor: "bg-[#F5F5F0]",
         },
         {

@@ -25,6 +25,7 @@ const Hero = ({ onDownloadClick }) => {
           </button>
         </div>
       </div>
+        <img src="Scroll-White-1.gif" alt="" className='w-40 flex items-center justify-center mx-auto mt-20' />
     </div>
   )
 }
