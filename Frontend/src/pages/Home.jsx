@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Hero from '../components/Hero'
 import Benefits from '../components/Benefits'
 import Features from '../components/Features'
@@ -7,6 +8,14 @@ import ComingSoonModal from '../components/ComingSoonModal'
 
 const Home = () => {
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("fley_token");
+    if (token) {
+      navigate("/dashboard");
+    }
+  }, [navigate]);
 
   return (
     <div className="relative min-h-screen font-poppins bg-black">
