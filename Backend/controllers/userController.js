@@ -12,6 +12,11 @@ export const registerUser = async (req, res) => {
     if (existingUser)
       return res.status(400).json({ message: "Email already exists" });
 
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*[!@#$%^&*0-9]).{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({ message: "Password must be at least 8 characters long and include both letters and numbers/symbols." });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
@@ -28,7 +33,7 @@ export const registerUser = async (req, res) => {
 
     res.status(201).json({
       message: "User registered successfully",
-      token, 
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -279,7 +284,7 @@ export const telegramLink = async (req, res) => {
     const { token, telegramUserId } = req.body;
     console.log(`[API] Link Request - Token: '${token}', TelegramID: ${telegramUserId}`);
 
-   
+
     const user = await User.findOne({ telegramLinkToken: token });
 
     if (!user) {
@@ -287,7 +292,7 @@ export const telegramLink = async (req, res) => {
       return res.json({ success: false, message: "Invalid or expired token" });
     }
 
-    
+
     const existingUser = await User.findOne({ telegramUserId: telegramUserId.toString() });
     if (existingUser && existingUser._id.toString() !== user._id.toString()) {
       console.log(`[API] Link Failed - Telegram ID ${telegramUserId} already linked to ${existingUser.email}`);

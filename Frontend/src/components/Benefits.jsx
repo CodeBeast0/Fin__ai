@@ -28,7 +28,7 @@ const Benefits = ({ onDownloadClick }) => {
     ];
 
     return (
-        <section id="benefits" className="py-20 px-5 max-w-7xl sm:mx-auto">
+        <section id="benefits" className="pb-20 px-5 max-w-7xl sm:mx-auto">
             <div className="bg-[#fff] rounded-[40px] px-8 pt-8 md:p-16 flex flex-col-reverse lg:flex-row items-center gap-12 overflow-hidden">
 
                 <div className="w-full lg:w-1/2 flex justify-center scale-110 lg:scale-125">

@@ -31,6 +31,14 @@ const AuthModal = ({ isOpen, onClose }) => {
         const endpoint = isLogin ? "/users/login" : "/users/register";
         const payload = isLogin ? { email, password } : { name, email, password };
 
+        if (!isLogin) {
+            const passwordRegex = /^(?=.*[A-Za-z])(?=.*[!@#$%^&*0-9]).{8,}$/;
+            if (!passwordRegex.test(password)) {
+                setError("Password must be at least 8 characters long and include both letters and numbers/symbols.");
+                return;
+            }
+        }
+
         try {
             const response = await axios.post(`${API_URL}${endpoint}`, payload, {
                 withCredentials: false
