@@ -322,6 +322,19 @@ export const Spend = async (req, res) => {
     user.financeProfile.entertainment -= amount;
     if (!user.financeProfile.variableExpenses) user.financeProfile.variableExpenses = [];
     user.financeProfile.variableExpenses.push({ title, amount });
+
+    if (user.financeProfile.entertainment < 0) {
+      const deficit = Math.abs(user.financeProfile.entertainment);
+      const savingsHistory = user.financeProfile.savingsHistory || [];
+
+      if (savingsHistory.length > 0) {
+        const lastEntry = savingsHistory[savingsHistory.length - 1];
+        lastEntry.amount -= deficit;
+
+        user.financeProfile.entertainment = 0;
+      }
+    }
+
     await user.save();
 
     const savingsHistory = user.financeProfile.savingsHistory || [];
