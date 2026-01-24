@@ -17,6 +17,7 @@ I help you control your allowance 💰
 Commands:
 /link <token> - link your account
 /spend <amount> <title> - add expense
+/save <amount> - add to savings
 /balance - show your allowance and savings
 /summary - show monthly summary
 /last - show recent transactions
@@ -26,24 +27,24 @@ Commands:
 
 app.post("/telegram-bot/webhook", async (req, res) => {
   const update = req.body;
-  
+
 
   if (!update.message || !update.message.text) {
-    return res.sendStatus(200); 
+    return res.sendStatus(200);
   }
 
   const chatId = update.message.chat.id;
   const text = update.message.text.trim();
 
   try {
-   
+
     if (text === "/start" || text === "/help") {
       await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
         chat_id: chatId,
         text: HELP_MESSAGE,
       });
     } else if (text.startsWith("/link")) {
-      
+
       const parts = text.split(/\s+/);
       const token = parts[1];
 
@@ -95,7 +96,7 @@ app.post("/telegram-bot/webhook", async (req, res) => {
       });
 
       if (resApi.data.success) {
-        
+
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
           chat_id: chatId,
           text: `Expense added ${title} ....`,
@@ -121,6 +122,47 @@ app.post("/telegram-bot/webhook", async (req, res) => {
       await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
         chat_id: chatId,
         text: "💡 Usage: /spend <amount> <title>\nExample: /spend 10 Coffee",
+      });
+    } else if (text.startsWith("/save ")) {
+      const parts = text.split(" ");
+      const amount = parseFloat(parts[1]);
+
+      if (isNaN(amount) || amount <= 0) {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: "❌ Invalid amount. Usage: /save <amount>",
+        });
+        return res.sendStatus(200);
+      }
+
+      try {
+        const resApi = await axios.post(`${API_URL}/users/save-money`, {
+          telegramUserId: chatId,
+          amount,
+        });
+
+        if (resApi.data.success) {
+          await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+            chat_id: chatId,
+            text: `✅ Added $${amount} to savings!\n🏦 Total Saved: $${resApi.data.totalSaved.toFixed(2)}`,
+          });
+        } else {
+          await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+            chat_id: chatId,
+            text: `❌ Failed to add saving: ${resApi.data.message}`,
+          });
+        }
+      } catch (saveError) {
+        console.error("Save API Error:", saveError.response?.data || saveError.message);
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+          chat_id: chatId,
+          text: "❌ Service unavailable (Save).",
+        });
+      }
+    } else if (text === "/save") {
+      await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+        chat_id: chatId,
+        text: "💡 Usage: /save <amount>\nExample: /save 50",
       });
     } else if (text === "/balance") {
       const resApi = await axios.get(`${API_URL}/users/by-telegram/${chatId}`);

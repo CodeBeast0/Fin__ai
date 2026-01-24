@@ -440,6 +440,45 @@ const Dashboard = () => {
                           </div>
                         </div>
 
+                        {/* Progress Bar */}
+                        <div className="w-full">
+                          {(() => {
+                            const totalSaved =
+                              user?.financeProfile?.savingsHistory &&
+                                user.financeProfile.savingsHistory.length > 0
+                                ? user.financeProfile.savingsHistory[
+                                  user.financeProfile.savingsHistory.length - 1
+                                ].amount
+                                : 0;
+                            const progress = goal.targetAmount > 0 ? Math.min(
+                              (totalSaved / goal.targetAmount) * 100,
+                              100
+                            ) : 0;
+                            return (
+                              <div className="relative pt-1">
+                                <div className="flex mb-2 items-center justify-between">
+                                  <div>
+                                    <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-200 bg-green-500/20">
+                                      Progress
+                                    </span>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="text-xs font-semibold inline-block text-green-400">
+                                      {progress.toFixed(0)}%
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-[#1a1a1a] border border-gray-800">
+                                  <div
+                                    style={{ width: `${progress}%` }}
+                                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500 transition-all duration-500"
+                                  ></div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           {aiPlan?.goalPlan && idx === 0 && (
                             <>

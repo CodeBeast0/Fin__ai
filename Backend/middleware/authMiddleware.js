@@ -66,3 +66,20 @@ export const validateTelegramIdParam = (req, res, next) => {
   }
   next();
 };
+
+export const validateSave = (req, res, next) => {
+  const { telegramUserId, amount } = req.body;
+  if (!telegramUserId || !amount) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing telegramUserId or amount",
+    });
+  }
+  if (isNaN(amount) || amount <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid amount",
+    });
+  }
+  next();
+};

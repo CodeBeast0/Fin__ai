@@ -363,6 +363,43 @@ export const getUserByTelegramId = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+export const addSaving = async (req, res) => {
+  try {
+    const { telegramUserId, amount } = req.body;
+
+    const user = await User.findOne({ telegramUserId });
+    if (!user) return res.json({ success: false, message: "User not linked" });
+
+    if (!user.financeProfile.savingsHistory) {
+      user.financeProfile.savingsHistory = [];
+    }
+
+    const savingsHistory = user.financeProfile.savingsHistory;
+
+    if (savingsHistory.length > 0) {
+      const lastEntry = savingsHistory[savingsHistory.length - 1];
+      lastEntry.amount += amount;
+    } else {
+      user.financeProfile.savingsHistory.push({
+        date: new Date(),
+        amount: amount,
+      });
+    }
+
+    await user.save();
+
+    const newTotal = savingsHistory.length > 0 ? savingsHistory[savingsHistory.length - 1].amount : amount;
+
+    res.json({
+      success: true,
+      totalSaved: newTotal,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 export const generateTelegramToken = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
